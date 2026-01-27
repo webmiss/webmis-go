@@ -1,14 +1,5 @@
 webmis
-public/logs
 public/upload/*
 tmp/*
+go.sum
 !.gitkeep
-
-# Editor directories and files
-.idea
-.vscode
-*.suo
-*.ntvs*
-*.njsproj
-*.sln
-*.sw?
