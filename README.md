@@ -44,6 +44,8 @@ webmis-go/
 │    ├── task                   // 任务类
 │    ├── util                   // 工具类
 │    └── views                  // 视图文件
+├── cli
+│    └── main.go                // 命令行入口: 路由配置
 ├── core
 │    ├── Base.go                // 基础类
 │    ├── Controller.go          // 基础控制器
