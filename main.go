@@ -27,6 +27,9 @@ func main() {
 	mux.HandleFunc("/admin/index/index", (&admin.Index{}).Index)
 	// 启动
 	cfg := config.Env()
+	if cfg.Mode == "dev" {
+		(&core.Base{}).Print("[ Server ]", "http://"+cfg.ServerHost+":"+cfg.ServerPort)
+	}
 	err := http.ListenAndServe(cfg.ServerHost+":"+cfg.ServerPort, mux)
 	if err != nil {
 		(&core.Base{}).Print("[ Server ]", err.Error())

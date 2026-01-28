@@ -12,6 +12,7 @@ type Index struct {
 
 /* 首页 */
 func (m *Index) Index(c http.ResponseWriter, r *http.Request) {
-	m.Print("API")
+	id := m.Get(r, "id")
+	m.Print("API", id)
 	m.GetJSON(c, map[string]interface{}{"code": 200, "data": "Go Api"})
 }
