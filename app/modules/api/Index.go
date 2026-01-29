@@ -2,6 +2,7 @@ package api
 
 import (
 	"net/http"
+	"webmis/app/models"
 	"webmis/core"
 )
 
@@ -12,7 +13,7 @@ type Index struct {
 
 /* 首页 */
 func (m *Index) Index(c http.ResponseWriter, r *http.Request) {
-	id := m.Get(r, "id")
-	m.Print("API", id)
+	user := (&models.User{}).New()
+	_ = user
 	m.GetJSON(c, map[string]interface{}{"code": 200, "data": "Go Api"})
 }

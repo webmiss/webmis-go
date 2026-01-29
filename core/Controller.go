@@ -6,7 +6,7 @@ import (
 	"net/http"
 )
 
-/* 基础控制器 */
+/* 控制器 */
 type Controller struct {
 	Base
 }
