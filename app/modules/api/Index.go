@@ -12,8 +12,13 @@ type Index struct {
 }
 
 /* 首页 */
-func (m *Index) Index(c http.ResponseWriter, r *http.Request) {
-	user := (&models.User{}).New()
-	_ = user
-	m.GetJSON(c, map[string]interface{}{"code": 200, "data": "Go Api"})
+func (c *Index) Index(p http.ResponseWriter, r *http.Request) {
+	m := (&models.User{}).New()
+	m.Columns("id")
+	m.Where("name=?", "admin")
+	m.FindFirst("", nil)
+	// sql, _ := m.SelectSQL()
+	//
+	// c.Print(sql)
+	c.GetJSON(p, map[string]interface{}{"code": 200, "data": "Go Api"})
 }

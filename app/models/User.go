@@ -10,5 +10,6 @@ type User struct {
 /* 构造函数 */
 func (m *User) New() *User {
 	m.DBConn("default")
+	m.Table("user")
 	return m
 }
