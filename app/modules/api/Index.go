@@ -13,12 +13,11 @@ type Index struct {
 
 /* 首页 */
 func (c *Index) Index(p http.ResponseWriter, r *http.Request) {
+	// 查询
 	m := (&models.User{}).New()
-	m.Columns("id")
-	m.Where("name=?", "admin")
-	m.FindFirst("", nil)
-	// sql, _ := m.SelectSQL()
-	//
-	// c.Print(sql)
-	c.GetJSON(p, map[string]interface{}{"code": 200, "data": "Go Api"})
+	m.Columns("id", "uname")
+	data := m.Find("", nil)
+	c.Print("Data:", data, m.GetSQL(), m.GetNums())
+	// 返回
+	c.GetJSON(p, map[string]interface{}{"code": 200, "msg": "Go Api"})
 }

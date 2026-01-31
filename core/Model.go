@@ -5,6 +5,7 @@ import (
 	"strconv"
 	"strings"
 	"webmis/app/config"
+	"webmis/app/util"
 
 	_ "github.com/go-sql-driver/mysql"
 )
@@ -37,9 +38,8 @@ func (m *Model) DBConn(name string) *sql.DB {
 	m.columns = "*"
 	// 配置
 	cfg := (&config.Db{}).Config(name)
-	if m.Conn == nil {
+	if m.Conn == nil || m.Conn.Stats().OpenConnections == 0 {
 		dsn := cfg.User + ":" + cfg.Password + "@tcp(" + cfg.Host + ":" + cfg.Port + ")/" + cfg.Database + "?charset=" + cfg.Charset + "&parseTime=True&loc=" + cfg.Loc
-		m.Print(dsn)
 		db, err := sql.Open("mysql", dsn)
 		if err != nil {
 			m.Print("[ "+m.name+" ] Conn:", err.Error())
@@ -51,22 +51,28 @@ func (m *Model) DBConn(name string) *sql.DB {
 
 /* 执行SQL */
 func (m *Model) Exec(conn *sql.DB, sql string, args []interface{}) sql.Result {
-	rows, err := conn.Exec(sql, args...)
+	rs, err := conn.Exec(sql, args...)
 	if err != nil {
 		m.Print("[ "+m.name+" ] Exec:", err.Error())
 		return nil
 	} else {
-		id, _ := rows.LastInsertId()
-		nums, _ := rows.RowsAffected()
-		m.id = int(id)
+		nums, _ := rs.RowsAffected()
 		m.nums = int(nums)
-		return rows
+		return rs
+	}
+}
+
+/* 关闭 */
+func (m *Model) Close() {
+	if m.Conn != nil || m.Conn.Stats().OpenConnections == 0 {
+		m.Conn.Close()
+		m.Conn = nil
 	}
 }
 
 /* 获取-SQL */
-func (m *Model) GetSQL() (string, []interface{}) {
-	return m.sql, m.args
+func (m *Model) GetSQL() string {
+	return m.sql
 }
 
 /* 获取-自增ID */
@@ -116,8 +122,8 @@ func (m *Model) Columns(columns ...string) {
 
 /* 条件 */
 func (m *Model) Where(where string, args ...interface{}) {
-	m.where = where
-	m.args = args
+	m.where = " WHERE " + where
+	m.args = append(m.args, args...)
 }
 
 /* 分组 */
@@ -188,20 +194,68 @@ func (m *Model) SelectSQL() (string, []interface{}) {
 }
 
 /* 查询-多条 */
-func (m *Model) Find(sql string, args []interface{}) {
+func (m *Model) Find(sql string, args []interface{}) []map[string]interface{} {
+	// SQL
 	if sql == "" {
 		sql, args = m.SelectSQL()
+		if sql == "" {
+			return nil
+		}
 	}
-	m.Print(sql, args)
+	// 执行
+	rows, err := m.Conn.Query(sql, args...)
+	if err != nil {
+		m.Print("[ "+m.name+" ] Find:", err.Error())
+		return nil
+	}
+	return m.FindDataAll(rows)
 }
 
 /* 查询-单条 */
-func (m *Model) FindFirst(sql string, args []interface{}) {
+func (m *Model) FindFirst(sql string, args []interface{}) map[string]interface{} {
+	// SQL
 	if sql == "" {
 		m.Limit(0, 1)
 		sql, args = m.SelectSQL()
+		if sql == "" {
+			return nil
+		}
 	}
-	m.Print(sql, args)
+	// 执行
+	rows, err := m.Conn.Query(sql, args...)
+	if err != nil {
+		m.Print("[ "+m.name+" ] Find:", err.Error())
+		return nil
+	}
+	res := m.FindDataAll(rows)
+	if len(res) == 0 {
+		return nil
+	}
+	return res[0]
+}
+
+/* 查询-结果 */
+func (m *Model) FindDataAll(rs *sql.Rows) []map[string]interface{} {
+	res := []map[string]interface{}{}
+	// 字段
+	columns, _ := rs.Columns()
+	key := make([]interface{}, len(columns))
+	val := make([]interface{}, len(columns))
+	for n := range key {
+		key[n] = &val[n]
+	}
+	// 结果
+	for rs.Next() {
+		rs.Scan(key...)
+		item := map[string]interface{}{}
+		for i, v := range val {
+			item[columns[i]] = (&util.Type{}).Strval(v)
+		}
+		res = append(res, item)
+	}
+	rs.Close()
+	m.Close()
+	return res
 }
 
 /* 添加-单条 */
@@ -258,11 +312,21 @@ func (m *Model) InsertSQL() (string, []interface{}) {
 }
 
 /* 添加-执行 */
-func (m *Model) Insert(sql string, args []interface{}) {
+func (m *Model) Insert(sql string, args []interface{}) int {
 	if sql == "" {
 		sql, args = m.InsertSQL()
+		if sql == "" {
+			return -1
+		}
 	}
-	m.Print(sql, args)
+	rs := m.Exec(m.Conn, sql, args)
+	if rs == nil {
+		return -1
+	}
+	id, _ := rs.LastInsertId()
+	m.id = int(id)
+	m.Close()
+	return m.id
 }
 
 /* 更新-数据 */
@@ -292,7 +356,7 @@ func (m *Model) UpdateSQL() (string, []interface{}) {
 		return "", nil
 	}
 	// SQL
-	m.sql = "UPDATE " + m.table + " SET " + m.data + " WHERE " + m.where
+	m.sql = "UPDATE " + m.table + " SET " + m.data + m.where
 	// 重置
 	m.table = ""
 	m.data = ""
@@ -305,11 +369,19 @@ func (m *Model) UpdateSQL() (string, []interface{}) {
 }
 
 /* 更新-执行 */
-func (m *Model) Update(sql string, args []interface{}) {
+func (m *Model) Update(sql string, args []interface{}) bool {
 	if sql == "" {
 		sql, args = m.UpdateSQL()
+		if sql == "" {
+			return false
+		}
 	}
-	m.Print(sql, args)
+	rs := m.Exec(m.Conn, sql, args)
+	if rs == nil {
+		return false
+	}
+	m.Close()
+	return true
 }
 
 /* 删除-SQL */
@@ -324,7 +396,7 @@ func (m *Model) DeleteSQL() (string, []interface{}) {
 		return "", nil
 	}
 	// SQL
-	m.sql = "DELETE FROM " + m.table + " WHERE " + m.where
+	m.sql = "DELETE FROM " + m.table + m.where
 	// 重置
 	m.table = ""
 	m.where = ""
@@ -336,9 +408,17 @@ func (m *Model) DeleteSQL() (string, []interface{}) {
 }
 
 /* 删除-执行 */
-func (m *Model) Delete(sql string, args []interface{}) {
+func (m *Model) Delete(sql string, args []interface{}) bool {
 	if sql == "" {
 		sql, args = m.DeleteSQL()
+		if sql == "" {
+			return false
+		}
 	}
-	m.Print(sql, args)
+	rs := m.Exec(m.Conn, sql, args)
+	if rs == nil {
+		return false
+	}
+	m.Close()
+	return true
 }
