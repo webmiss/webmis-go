@@ -1,19 +1,24 @@
 package core
 
 import (
+	"context"
 	"database/sql"
 	"strconv"
 	"strings"
+	"time"
 	"webmis/app/config"
 	"webmis/app/util"
 
 	_ "github.com/go-sql-driver/mysql"
 )
 
+var Pool *MySQLConnectionPool // 连接池
+
 /* 控制器 */
 type Model struct {
 	Base
-	Conn    *sql.DB       // 连接
+	MySQLConnectionPool
+	Conn    *sql.Conn     // 连接
 	name    string        // 名称
 	table   string        // 数据表
 	columns string        // 字段
@@ -32,26 +37,57 @@ type Model struct {
 }
 
 /* 获取连接 */
-func (m *Model) DBConn(name string) *sql.DB {
+func (m *Model) DBConn(name string) *sql.Conn {
 	// 默认值
 	m.name = "Model"
 	m.columns = "*"
 	// 配置
 	cfg := (&config.Db{}).Config(name)
-	if m.Conn == nil || m.Conn.Stats().OpenConnections == 0 {
-		dsn := cfg.User + ":" + cfg.Password + "@tcp(" + cfg.Host + ":" + cfg.Port + ")/" + cfg.Database + "?charset=" + cfg.Charset + "&parseTime=True&loc=" + cfg.Loc
-		db, err := sql.Open("mysql", dsn)
+	// 连接池
+	if Pool == nil {
+		var err error
+		Pool, err = (&MySQLConnectionPool{}).Pool(cfg)
 		if err != nil {
-			m.Print("[ "+m.name+" ] Conn:", err.Error())
+			m.Print("[ "+m.name+" ] Pool:", err.Error())
+			return nil
 		}
-		m.Conn = db
+		// defer Pool.Destroy()
+		return nil
 	}
+	// 连接
+	conn, err := Pool.GetConnection(3 * time.Second)
+	if err != nil {
+		m.Print("[ "+m.name+" ] Conn:", err.Error())
+		return nil
+	}
+	m.Conn = conn
+	// if m.Conn == nil || m.Conn.Stats().OpenConnections == 0 {
+	// 	dsn := cfg.User + ":" + cfg.Password + "@tcp(" + cfg.Host + ":" + cfg.Port + ")/" + cfg.Database + "?charset=" + cfg.Charset + "&parseTime=True&loc=" + cfg.Loc
+	// 	db, err := sql.Open("mysql", dsn)
+	// 	if err != nil {
+	// 		m.Print("[ "+m.name+" ] Conn:", err.Error())
+	// 	}
+	// 	m.Conn = db
+	// }
 	return m.Conn
 }
 
+/* 查询 */
+func (m *Model) Query(conn *sql.Conn, sql string, args []interface{}) (*sql.Rows, error) {
+	rows, err := m.Conn.QueryContext(context.Background(), sql, args...)
+	if err != nil {
+		m.Print("[ "+m.name+" ] Query:", err.Error())
+		return nil, err
+	}
+	return rows, nil
+}
+
 /* 执行SQL */
-func (m *Model) Exec(conn *sql.DB, sql string, args []interface{}) sql.Result {
-	rs, err := conn.Exec(sql, args...)
+func (m *Model) Exec(conn *sql.Conn, sql string, args []interface{}) sql.Result {
+	if conn == nil {
+		return nil
+	}
+	rs, err := conn.ExecContext(context.Background(), sql, args...)
 	if err != nil {
 		m.Print("[ "+m.name+" ] Exec:", err.Error())
 		return nil
@@ -64,9 +100,11 @@ func (m *Model) Exec(conn *sql.DB, sql string, args []interface{}) sql.Result {
 
 /* 关闭 */
 func (m *Model) Close() {
-	if m.Conn != nil || m.Conn.Stats().OpenConnections == 0 {
-		m.Conn.Close()
-		m.Conn = nil
+	if Pool != nil && m.Conn != nil {
+		err := Pool.ReleaseConnection(m.Conn)
+		if err != nil {
+			m.Print("[ "+m.name+" ] Close:", err.Error())
+		}
 	}
 }
 
@@ -202,8 +240,12 @@ func (m *Model) Find(sql string, args []interface{}) []map[string]interface{} {
 			return nil
 		}
 	}
+	// 连接
+	if m.Conn == nil {
+		return nil
+	}
 	// 执行
-	rows, err := m.Conn.Query(sql, args...)
+	rows, err := m.Query(m.Conn, sql, args)
 	if err != nil {
 		m.Print("[ "+m.name+" ] Find:", err.Error())
 		return nil
@@ -221,8 +263,12 @@ func (m *Model) FindFirst(sql string, args []interface{}) map[string]interface{}
 			return nil
 		}
 	}
+	// 连接
+	if m.Conn == nil {
+		return nil
+	}
 	// 执行
-	rows, err := m.Conn.Query(sql, args...)
+	rows, err := m.Conn.QueryContext(context.Background(), sql, args...)
 	if err != nil {
 		m.Print("[ "+m.name+" ] Find:", err.Error())
 		return nil

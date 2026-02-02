@@ -2,13 +2,16 @@ package config
 
 /* 数据库 */
 type Db struct {
-	Host     string // 主机
-	Port     string // 端口
-	User     string // 用户名
-	Password string // 密码
-	Database string // 数据库
-	Charset  string // 编码
-	Loc      string // 时区
+	Host         string // 主机
+	Port         string // 端口
+	User         string // 用户名
+	Password     string // 密码
+	Database     string // 数据库
+	Charset      string // 编码
+	Loc          string // 时区
+	PoolInitSize int    // 初始连接数
+	PoolMaxSize  int    // 最大连接数
+	PoolMaxWait  int    // 空闲时间
 }
 
 /* 配置 */
@@ -22,6 +25,9 @@ func (c *Db) Config(name string) *Db {
 		c.Database = "webmis" // 数据库
 		c.Charset = "utf8mb4" // 编码
 		c.Loc = "Local"       // 时区
+		c.PoolInitSize = 100  // 初始连接数
+		c.PoolMaxSize = 150   // 最大连接数
+		c.PoolMaxWait = 3     // 空闲时间
 	case "other":
 		c.Host = "127.0.0.1"                            // 主机
 		c.Port = "3306"                                 // 端口
@@ -30,6 +36,9 @@ func (c *Db) Config(name string) *Db {
 		c.Database = "webmis"                           // 数据库
 		c.Charset = "utf8mb4"                           // 编码
 		c.Loc = "Local"                                 // 时区
+		c.PoolInitSize = 100                            // 初始连接数
+		c.PoolMaxSize = 150                             // 最大连接数
+		c.PoolMaxWait = 3                               // 空闲时间
 	}
 	return c
 }
