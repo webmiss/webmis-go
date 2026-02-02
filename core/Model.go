@@ -51,7 +51,6 @@ func (m *Model) DBConn(name string) *sql.Conn {
 			m.Print("[ "+m.name+" ] Pool:", err.Error())
 			return nil
 		}
-		// defer Pool.Destroy()
 		return nil
 	}
 	// 连接
@@ -61,14 +60,6 @@ func (m *Model) DBConn(name string) *sql.Conn {
 		return nil
 	}
 	m.Conn = conn
-	// if m.Conn == nil || m.Conn.Stats().OpenConnections == 0 {
-	// 	dsn := cfg.User + ":" + cfg.Password + "@tcp(" + cfg.Host + ":" + cfg.Port + ")/" + cfg.Database + "?charset=" + cfg.Charset + "&parseTime=True&loc=" + cfg.Loc
-	// 	db, err := sql.Open("mysql", dsn)
-	// 	if err != nil {
-	// 		m.Print("[ "+m.name+" ] Conn:", err.Error())
-	// 	}
-	// 	m.Conn = db
-	// }
 	return m.Conn
 }
 
