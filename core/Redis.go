@@ -199,3 +199,47 @@ func (r *Redis) HLen(key string) int64 {
 	val, _ := r.Conn.HLen(ctx, key).Result()
 	return val
 }
+
+/* 列表(List)-添加 */
+func (r *Redis) LPush(key, value string) bool {
+	if r.Conn == nil {
+		return false
+	}
+	return r.Conn.LPush(ctx, key, value).Err() == nil
+}
+func (r *Redis) RPush(key, value string) bool {
+	if r.Conn == nil {
+		return false
+	}
+	return r.Conn.RPush(ctx, key, value).Err() == nil
+}
+
+/* 列表(List)-获取 */
+func (r *Redis) LPop(key string) string {
+	if r.Conn == nil {
+		return ""
+	}
+	val, _ := r.Conn.LPop(ctx, key).Result()
+	return val
+}
+func (r *Redis) RPop(key string) string {
+	if r.Conn == nil {
+		return ""
+	}
+	val, _ := r.Conn.RPop(ctx, key).Result()
+	return val
+}
+func (r *Redis) BLPop(key string) string {
+	if r.Conn == nil {
+		return ""
+	}
+	val, _ := r.Conn.BLPop(ctx, 0, key).Result()
+	return val[1]
+}
+func (r *Redis) BRPop(key string) string {
+	if r.Conn == nil {
+		return ""
+	}
+	val, _ := r.Conn.BRPop(ctx, 0, key).Result()
+	return val[1]
+}
