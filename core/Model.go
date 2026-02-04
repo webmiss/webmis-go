@@ -64,7 +64,7 @@ func (m *Model) DBConn(name string) *sql.Conn {
 }
 
 /* 查询 */
-func (m *Model) Query(conn *sql.Conn, sql string, args []interface{}) (*sql.Rows, error) {
+func (m *Model) Query(conn *sql.Conn, sql string, args ...interface{}) (*sql.Rows, error) {
 	rows, err := m.Conn.QueryContext(context.Background(), sql, args...)
 	if err != nil {
 		m.Print("[ "+m.name+" ] Query:", err.Error())
@@ -74,7 +74,7 @@ func (m *Model) Query(conn *sql.Conn, sql string, args []interface{}) (*sql.Rows
 }
 
 /* 执行SQL */
-func (m *Model) Exec(conn *sql.Conn, sql string, args []interface{}) sql.Result {
+func (m *Model) Exec(conn *sql.Conn, sql string, args ...interface{}) sql.Result {
 	if conn == nil {
 		return nil
 	}
@@ -223,7 +223,7 @@ func (m *Model) SelectSQL() (string, []interface{}) {
 }
 
 /* 查询-多条 */
-func (m *Model) Find(sql string, args []interface{}) []map[string]interface{} {
+func (m *Model) Find(sql string, args ...interface{}) []map[string]interface{} {
 	// SQL
 	if sql == "" {
 		sql, args = m.SelectSQL()
@@ -236,7 +236,7 @@ func (m *Model) Find(sql string, args []interface{}) []map[string]interface{} {
 		return nil
 	}
 	// 执行
-	rows, err := m.Query(m.Conn, sql, args)
+	rows, err := m.Query(m.Conn, sql, args...)
 	if err != nil {
 		m.Print("[ "+m.name+" ] Find:", err.Error())
 		return nil
@@ -245,7 +245,7 @@ func (m *Model) Find(sql string, args []interface{}) []map[string]interface{} {
 }
 
 /* 查询-单条 */
-func (m *Model) FindFirst(sql string, args []interface{}) map[string]interface{} {
+func (m *Model) FindFirst(sql string, args ...interface{}) map[string]interface{} {
 	// SQL
 	if sql == "" {
 		m.Limit(0, 1)
@@ -349,14 +349,14 @@ func (m *Model) InsertSQL() (string, []interface{}) {
 }
 
 /* 添加-执行 */
-func (m *Model) Insert(sql string, args []interface{}) int {
+func (m *Model) Insert(sql string, args ...interface{}) int {
 	if sql == "" {
 		sql, args = m.InsertSQL()
 		if sql == "" {
 			return -1
 		}
 	}
-	rs := m.Exec(m.Conn, sql, args)
+	rs := m.Exec(m.Conn, sql, args...)
 	if rs == nil {
 		return -1
 	}
@@ -406,14 +406,14 @@ func (m *Model) UpdateSQL() (string, []interface{}) {
 }
 
 /* 更新-执行 */
-func (m *Model) Update(sql string, args []interface{}) bool {
+func (m *Model) Update(sql string, args ...interface{}) bool {
 	if sql == "" {
 		sql, args = m.UpdateSQL()
 		if sql == "" {
 			return false
 		}
 	}
-	rs := m.Exec(m.Conn, sql, args)
+	rs := m.Exec(m.Conn, sql, args...)
 	if rs == nil {
 		return false
 	}
@@ -445,14 +445,14 @@ func (m *Model) DeleteSQL() (string, []interface{}) {
 }
 
 /* 删除-执行 */
-func (m *Model) Delete(sql string, args []interface{}) bool {
+func (m *Model) Delete(sql string, args ...interface{}) bool {
 	if sql == "" {
 		sql, args = m.DeleteSQL()
 		if sql == "" {
 			return false
 		}
 	}
-	rs := m.Exec(m.Conn, sql, args)
+	rs := m.Exec(m.Conn, sql, args...)
 	if rs == nil {
 		return false
 	}
