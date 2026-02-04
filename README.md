@@ -51,8 +51,7 @@ webmis-go/
 │    ├── Controller.go            // 基础控制器
 │    ├── Model.go                 // 基础模型
 │    ├── MySQLConnectionPool.go   // MySQL 连接池
-│    ├── Redis.go                 // 缓存数据库( 连接池 )
-│    └── View.go                  // 基础视图
+│    └── Redis.go                 // 缓存数据库( 连接池 )
 ├── public                         // 静态资源
 │    ├── upload                   // 上传目录
 │    └── favicon.png              // 图标
