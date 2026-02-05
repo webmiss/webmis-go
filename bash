@@ -25,7 +25,7 @@ elif [ "$s" == "http" ]; then
   "./$name$version"
 # Server-启动
 elif [ "$s" == "start" ]; then
-  go build && nohup "./$name$version" > $log &
+  nohup "./$name$version" > $log &
 # Server-停止
 elif [ "$s" == "stop" ]; then
   ps -aux | grep "./$name$version" | grep -v grep | awk {'print $2'} | xargs kill
