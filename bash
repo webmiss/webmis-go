@@ -2,10 +2,11 @@
 
 # 配置
 s=$1
-name='webmis'                 #项目名称
-index='main.go'               #入口文件
-cli='cli/main.go'             #Cli命令行
-log='public/upload/server.log'
+name='webmis'                 # 项目名称
+version='3.0.0'               # 版本
+index='main.go'               # 入口文件
+cli='cli/main.go'             # Cli命令行
+log='public/server.log'       # 运行日志
 
 # 运行
 if [ "$s" == "serve" ]; then
@@ -18,16 +19,16 @@ elif [ "$s" == "clear" ]; then
   go mod tidy
 # 打包
 elif [ "$s" == "build" ]; then
-  go build
+  go build && mv $name "$name$version"
 # 预览
 elif [ "$s" == "http" ]; then
-  ./$name
+  "./$name$version"
 # Server-启动
 elif [ "$s" == "start" ]; then
-  go build && ./$name > $log &
+  go build && nohup "./$name$version" > $log &
 # Server-停止
 elif [ "$s" == "stop" ]; then
-  ps -aux | grep ./$name | grep -v grep | awk {'print $2'} | xargs kill
+  ps -aux | grep "./$name$version" | grep -v grep | awk {'print $2'} | xargs kill
 # Socket-运行
 elif [ "$s" == "socket" ]; then
   go run $cli socket start

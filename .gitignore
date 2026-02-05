@@ -1,5 +1,6 @@
-webmis
+webmis3.0.0
 public/upload/*
+public/server.log
 tmp/*
 go.sum
 !.gitkeep

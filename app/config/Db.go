@@ -18,27 +18,27 @@ type Db struct {
 func (c *Db) Config(name string) *Db {
 	switch name {
 	case "default":
-		c.Host = "127.0.0.1"  // 主机
-		c.Port = "3306"       // 端口
-		c.User = "root"       // 用户名
-		c.Password = "123456" // 密码
-		c.Database = "webmis" // 数据库
-		c.Charset = "utf8mb4" // 编码
-		c.Loc = "Local"       // 时区
-		c.PoolInitSize = 10   // 初始连接数
-		c.PoolMaxSize = 15    // 最大连接数
-		c.PoolMaxWait = 3     // 空闲时间
-	case "other":
 		c.Host = "127.0.0.1"                            // 主机
 		c.Port = "3306"                                 // 端口
-		c.User = "root"                                 // 用户名
+		c.User = "webmis"                               // 用户名
 		c.Password = "e4b99adec618e653400966be536c45f8" // 密码
 		c.Database = "webmis"                           // 数据库
 		c.Charset = "utf8mb4"                           // 编码
 		c.Loc = "Local"                                 // 时区
-		c.PoolInitSize = 100                            // 初始连接数
-		c.PoolMaxSize = 150                             // 最大连接数
+		c.PoolInitSize = 10                             // 初始连接数
+		c.PoolMaxSize = 15                              // 最大连接数
 		c.PoolMaxWait = 3                               // 空闲时间
+	case "other":
+		c.Host = "127.0.0.1"  // 主机
+		c.Port = "3306"       // 端口
+		c.User = "webmis"     // 用户名
+		c.Password = "123456" // 密码
+		c.Database = "webmis" // 数据库
+		c.Charset = "utf8mb4" // 编码
+		c.Loc = "Local"       // 时区
+		c.PoolInitSize = 100  // 初始连接数
+		c.PoolMaxSize = 150   // 最大连接数
+		c.PoolMaxWait = 3     // 空闲时间
 	}
 	return c
 }
