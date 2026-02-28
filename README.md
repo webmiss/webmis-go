@@ -9,9 +9,15 @@
 
 ## 安装
 ```bash
+# 下载
 $ git clone https://github.com/webmiss/webmis-go.git
 $ cd webmis-go
-$ go clean --modcache && go get -v
+
+# Linux、MacOS
+./bash install
+
+# Windows 11
+.\cmd install
 ```
 
 ## 运行
@@ -19,13 +25,10 @@ $ go clean --modcache && go get -v
 # Linux、MacOS
 ./bash serve
 ./bash socketServer
-# Windows
+
+# Windows 11
 .\cmd serve
 .\cmd socketServer
-# 测试Socket
-go run cli.go socket client admin '{"type":"","msg":"\u6d4b\u8bd5"}'
-# 命令行: 控制器->方法(参数...)
-go run cli.go main index params
 ```
 - 浏览器访问 http://127.0.0.1:9030/
 
