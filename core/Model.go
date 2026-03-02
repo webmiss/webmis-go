@@ -151,6 +151,9 @@ func (m *Model) Columns(columns ...string) {
 
 /* 条件 */
 func (m *Model) Where(where string, args ...interface{}) {
+	if where == "" {
+		return
+	}
 	m.where = " WHERE " + where
 	m.args = append(m.args, args...)
 }

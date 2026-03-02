@@ -4,8 +4,8 @@
 **演示**
 - 使用文档( [https://webmis.vip/](https://webmis.vip/go/install/index) )
 - 网站-API( [https://go.webmis.vip/](https://go.webmis.vip/) )
-- 前端-API( [https://go.webmis.vip/api/](https://go.webmis.vip/api/) )
-- 后台-API( [https://go.webmis.vip/admin/](https://go.webmis.vip/admin/) )
+- 前端-API( [https://go.webmis.vip/api](https://go.webmis.vip/api) )
+- 后台-API( [https://go.webmis.vip/admin](https://go.webmis.vip/admin) )
 
 ## 安装
 ```bash
@@ -20,7 +20,7 @@ $ cd webmis-go
 .\cmd install
 ```
 
-## 运行
+## 开发环境
 ```bash
 # Linux、MacOS
 ./bash serve
@@ -31,6 +31,54 @@ $ cd webmis-go
 .\cmd socketServer
 ```
 - 浏览器访问 http://127.0.0.1:9030/
+
+## 生产环境
+### 交换分区( 编译时内存不足 )
+```bash
+# 创建文件
+fallocate -l 4G /swapfile
+# 设置权限
+chmod 600 /swapfile
+# 格式化
+mkswap /swapfile
+# 启用
+swapon /swapfile
+# 优化
+echo 'vm.swappiness=10' >> /etc/sysctl.conf
+sysctl -p
+# 查看交换空间信息
+free -m
+```
+- 开机启动: 编辑 /etc/fstab 文件，添加内容: /swapfile none swap sw 0 0
+
+### Nginx
+```bash
+upstream go {
+    server localhost:9030;
+}
+server {
+    server_name  go.webmis.vip;
+    set $root_path /home/www/webmis/go/public;
+    root $root_path;
+    index index.html;
+
+    location / {
+        proxy_pass http://go;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+    location ~* ^/(upload|favicon.png)/(.+)$ {
+        root $root_path;
+        add_header 'Access-Control-Allow-Origin' '*';
+        add_header 'Access-Control-Allow-Methods' 'GET, POST, OPTIONS';
+        add_header 'Access-Control-Allow-Headers' 'Content-Type, Authorization';
+        if ($request_method = 'OPTIONS') { return 204; }
+    }
+
+}
+```
 
 ## 项目结构
 ```plaintext
