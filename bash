@@ -8,12 +8,20 @@ index='main.go'               # 入口文件
 cli='cli/main.go'             # Cli命令行
 log='public/server.log'       # 运行日志
 
+# Go环境
+if ! command -v go &> /dev/null; then
+  echo "> 请安装'go'"
+  exit
+fi
+
 # 运行
 if [ "$s" == "serve" ]; then
   air
 # 安装
 elif [ "$s" == "install" ]; then
   go clean --modcache && go get -v
+  go install github.com/air-verse/air@latest
+  echo "运行: ./bash serve"
 # 清理
 elif [ "$s" == "clear" ]; then
   go mod tidy
