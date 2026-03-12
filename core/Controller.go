@@ -2,8 +2,8 @@ package core
 
 import (
 	"encoding/json"
-	"io"
 	"net/http"
+	"strings"
 )
 
 /* 控制器 */
@@ -12,33 +12,36 @@ type Controller struct {
 }
 
 /* 获取JSON */
-func (Controller) GetJSON(c http.ResponseWriter, data map[string]interface{}) {
-	c.Header().Set("Content-Type", "application/json; charset=utf-8")
-	c.WriteHeader(http.StatusOK)
-	_ = json.NewEncoder(c).Encode(data)
+func (c Controller) GetJSON(p http.ResponseWriter, q *http.Request, data map[string]interface{}) {
+	p.Header().Set("Content-type", "application/json; charset=utf-8")
+	p.WriteHeader(http.StatusOK)
+	lang := q.URL.Query().Get("lang")
+	if lang == "" {
+		lang = "en_US"
+	}
+	lang = strings.ToLower(lang)
+	// c.Print("lang", lang)
+	_ = json.NewEncoder(p).Encode(data)
 }
 
 /* Get参数 */
-func (Controller) Get(r *http.Request, key string) string {
-	return r.URL.Query().Get(key)
+func (Controller) Get(q *http.Request, key string) string {
+	return q.URL.Query().Get(key)
 }
 
 /* Post参数 */
-func (Controller) Post(r *http.Request, key string) string {
-	return r.FormValue(key)
+func (Controller) Post(q *http.Request, key string) string {
+	return q.FormValue(key)
 }
 
 /* JSON参数 */
-func (Controller) Json(r *http.Request) map[string]interface{} {
-	if r.Header.Get("Content-Type") != "application/json" {
+func (Controller) Json(q *http.Request) map[string]interface{} {
+	if q.Method != http.MethodPost {
 		return nil
 	}
-	body, err := io.ReadAll(r.Body)
-	if err != nil {
-		return nil
-	}
-	param := map[string]interface{}{}
-	err = json.Unmarshal(body, &param)
+	var param map[string]interface{}
+	err := json.NewDecoder(q.Body).Decode(&param)
+	defer q.Body.Close()
 	if err != nil {
 		return nil
 	}
