@@ -22,5 +22,5 @@ func (c *Index) Index(p http.ResponseWriter, q *http.Request) {
 	r.Set("test", "Go Redis")
 	c.Print("Data:", data, r.Get("test"))
 	// 返回
-	c.GetJSON(p, map[string]interface{}{"code": 200, "msg": "Go Api"})
+	c.GetJSON(p, q, map[string]interface{}{"code": 200, "msg": "Go Api"})
 }
