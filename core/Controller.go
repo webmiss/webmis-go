@@ -32,6 +32,9 @@ func (c Controller) GetLang(q *http.Request, action string, args ...interface{})
 	class := reflect.ValueOf(obj)
 	method := class.MethodByName("Config")
 	msg := method.Call([]reflect.Value{reflect.ValueOf(action)})
+	if len(msg) == 0 {
+		return ""
+	}
 	return fmt.Sprintf(msg[0].String(), args...)
 }
 
