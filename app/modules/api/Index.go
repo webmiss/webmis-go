@@ -12,15 +12,15 @@ type Index struct {
 }
 
 /* 首页 */
-func (c *Index) Index(p http.ResponseWriter, q *http.Request) {
+func (c *Index) Index(w http.ResponseWriter, r *http.Request) {
 	// 查询
 	m := (&models.User{}).New()
 	m.Columns("id", "uname")
 	data := m.Find("")
 	// Redis
-	r := (&core.Redis{}).New("default")
-	r.Set("test", "Go Redis")
-	c.Print("Data:", data, r.Get("test"))
+	rd := (&core.Redis{}).New("default")
+	rd.Set("test", "Go Redis")
+	c.Print("Data:", data, rd.Get("test"))
 	// 返回
-	c.GetJSON(p, q, map[string]interface{}{"code": 200, "msg": "Go Api"})
+	c.GetJSON(w, r, map[string]interface{}{"code": 0, "msg": "Go Api"})
 }

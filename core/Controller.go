@@ -7,6 +7,7 @@ import (
 	"reflect"
 	"strings"
 	"webmis/app/config/langs"
+	"webmis/app/util"
 )
 
 /* 控制器 */
@@ -14,9 +15,18 @@ type Controller struct {
 	Base
 }
 
+/* 资源地址 */
+func (c Controller) BaseUrl(r *http.Request, url string) string {
+	http := "http"
+	if r.TLS != nil {
+		http = "https"
+	}
+	return fmt.Sprintf("%s://%s/%s", http, r.Host, url)
+}
+
 /* 获取语言 */
-func (c Controller) GetLang(q *http.Request, action string, args ...interface{}) string {
-	lang := q.URL.Query().Get("lang")
+func (c Controller) GetLang(r *http.Request, action string, args ...interface{}) string {
+	lang := r.URL.Query().Get("lang")
 	if lang == "" {
 		lang = "en_US"
 	}
@@ -39,36 +49,36 @@ func (c Controller) GetLang(q *http.Request, action string, args ...interface{})
 }
 
 /* 获取JSON */
-func (c Controller) GetJSON(p http.ResponseWriter, q *http.Request, data map[string]interface{}) {
+func (c Controller) GetJSON(w http.ResponseWriter, r *http.Request, data map[string]interface{}) {
 	// Json类型
-	p.Header().Set("Content-type", "application/json; charset=utf-8")
-	p.WriteHeader(http.StatusOK)
+	w.Header().Set("Content-type", "application/json; charset=utf-8")
+	w.WriteHeader(http.StatusOK)
 	// 语言
 	if data["code"] != nil && data["msg"] == nil {
-		data["msg"] = c.GetLang(q, "code_"+fmt.Sprint(data["code"]))
+		data["msg"] = c.GetLang(r, "code_"+(&util.Type{}).Strval(data["code"]))
 	}
 	// 输出
-	_ = json.NewEncoder(p).Encode(data)
+	_ = json.NewEncoder(w).Encode(data)
 }
 
 /* Get参数 */
-func (Controller) Get(q *http.Request, key string) string {
-	return q.URL.Query().Get(key)
+func (Controller) Get(r *http.Request, key string) string {
+	return r.URL.Query().Get(key)
 }
 
 /* Post参数 */
-func (Controller) Post(q *http.Request, key string) string {
-	return q.FormValue(key)
+func (Controller) Post(r *http.Request, key string) string {
+	return r.FormValue(key)
 }
 
 /* JSON参数 */
-func (Controller) Json(q *http.Request) map[string]interface{} {
-	if q.Method != http.MethodPost {
+func (Controller) Json(r *http.Request) map[string]interface{} {
+	if r.Method != http.MethodPost {
 		return nil
 	}
 	var param map[string]interface{}
-	err := json.NewDecoder(q.Body).Decode(&param)
-	defer q.Body.Close()
+	err := json.NewDecoder(r.Body).Decode(&param)
+	defer r.Body.Close()
 	if err != nil {
 		return nil
 	}

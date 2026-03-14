@@ -41,6 +41,7 @@ func main() {
 	mux.HandleFunc("/admin/index/index", (&admin.Index{}).Index)
 	mux.HandleFunc("/admin/index/version", (&admin.Index{}).Version)
 	mux.HandleFunc("/admin/index/holiday", (&admin.Index{}).Holiday)
+	mux.HandleFunc("/admin/user/login", (&admin.User{}).Login)
 	// 启动
 	cfg := config.Env()
 	if cfg.Mode == "dev" {

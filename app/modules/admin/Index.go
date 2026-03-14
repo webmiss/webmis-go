@@ -12,17 +12,17 @@ type Index struct {
 }
 
 /* 首页 */
-func (c *Index) Index(p http.ResponseWriter, q *http.Request) {
+func (c *Index) Index(w http.ResponseWriter, r *http.Request) {
 	// 返回
-	c.GetJSON(p, q, map[string]interface{}{"code": 200, "data": "Go Admin"})
+	c.GetJSON(w, r, map[string]interface{}{"code": 0, "data": "Go Admin"})
 }
 
 /* 软件升级 */
-func (c *Index) Version(p http.ResponseWriter, q *http.Request) {
+func (c *Index) Version(w http.ResponseWriter, r *http.Request) {
 	// 参数
-	json := c.Json(q)
+	json := c.Json(r)
 	if json == nil {
-		c.GetJSON(p, q, map[string]interface{}{"code": 4000, "msg": "参数错误!"})
+		c.GetJSON(w, r, map[string]interface{}{"code": 4000, "msg": "参数错误!"})
 		return
 	}
 	os := c.JsonName(json, "os").(string)
@@ -30,7 +30,7 @@ func (c *Index) Version(p http.ResponseWriter, q *http.Request) {
 	// 验证
 	os = strings.ToLower(os)
 	if os != "web" {
-		c.GetJSON(p, q, map[string]interface{}{"code": 4000, "msg": "[" + os + "]该操作系统不支持更新!"})
+		c.GetJSON(w, r, map[string]interface{}{"code": 4000, "msg": "[" + os + "]该操作系统不支持更新!"})
 		return
 	}
 	// 数据
@@ -43,7 +43,7 @@ func (c *Index) Version(p http.ResponseWriter, q *http.Request) {
 		size = 0
 	}
 	// 返回
-	c.GetJSON(p, q, map[string]interface{}{"code": 0, "data": map[string]interface{}{
+	c.GetJSON(w, r, map[string]interface{}{"code": 0, "data": map[string]interface{}{
 		"os":      os,
 		"version": version,
 		"local":   local,
@@ -53,11 +53,11 @@ func (c *Index) Version(p http.ResponseWriter, q *http.Request) {
 }
 
 /* 法定假期 */
-func (c *Index) Holiday(p http.ResponseWriter, q *http.Request) {
+func (c *Index) Holiday(w http.ResponseWriter, r *http.Request) {
 	// 参数
-	json := c.Json(q)
+	json := c.Json(r)
 	if json == nil {
-		c.GetJSON(p, q, map[string]interface{}{"code": 4000, "msg": "参数错误!"})
+		c.GetJSON(w, r, map[string]interface{}{"code": 4000, "msg": "参数错误!"})
 		return
 	}
 	date := c.JsonName(json, "date").(string)
@@ -96,8 +96,8 @@ func (c *Index) Holiday(p http.ResponseWriter, q *http.Request) {
 	}
 	// 返回
 	if holiday[date] != nil {
-		c.GetJSON(p, q, map[string]interface{}{"code": 0, "data": holiday[date]})
+		c.GetJSON(w, r, map[string]interface{}{"code": 0, "data": holiday[date]})
 	} else {
-		c.GetJSON(p, q, map[string]interface{}{"code": 0, "data": ""})
+		c.GetJSON(w, r, map[string]interface{}{"code": 0, "data": ""})
 	}
 }

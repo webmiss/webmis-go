@@ -11,6 +11,6 @@ type Index struct {
 }
 
 /* 首页 */
-func (m *Index) Index(p http.ResponseWriter, q *http.Request) {
-	m.GetJSON(p, q, map[string]interface{}{"code": 0, "title": "WebMIS 3.0", "copy": "webmis.vip © 2026"})
+func (m *Index) Index(w http.ResponseWriter, r *http.Request) {
+	m.GetJSON(w, r, map[string]interface{}{"code": 0, "title": "WebMIS 3.0", "copy": "webmis.vip © 2026"})
 }
