@@ -6,6 +6,6 @@ import "time"
 type TimeType struct{}
 
 /* Bool */
-func (t TimeType) Time() int {
+func Time() int {
 	return int(time.Now().Unix())
 }

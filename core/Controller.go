@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"net/http"
 	"reflect"
-	"strings"
 	"webmis/app/config/langs"
 	"webmis/app/util"
 )
@@ -13,10 +12,11 @@ import (
 /* 控制器 */
 type Controller struct {
 	Base
+	Lang string
 }
 
 /* 资源地址 */
-func (c Controller) BaseUrl(r *http.Request, url string) string {
+func (c *Controller) BaseUrl(r *http.Request, url string) string {
 	http := "http"
 	if r.TLS != nil {
 		http = "https"
@@ -25,15 +25,14 @@ func (c Controller) BaseUrl(r *http.Request, url string) string {
 }
 
 /* 获取语言 */
-func (c Controller) GetLang(r *http.Request, action string, args ...interface{}) string {
-	lang := r.URL.Query().Get("lang")
-	if lang == "" {
-		lang = "en_US"
+func (c *Controller) GetLang(action string, args ...interface{}) string {
+	if c.Lang == "" {
+		c.Lang = "en_US"
 	}
-	lang = strings.ToLower(lang)
+	c.Lang = util.Lower(c.Lang)
 	// 语言包
 	var obj interface{}
-	if lang == "zh_cn" {
+	if c.Lang == "zh_cn" {
 		obj = (&langs.Zh_cn{})
 	} else {
 		obj = (&langs.En_us{})
@@ -49,30 +48,30 @@ func (c Controller) GetLang(r *http.Request, action string, args ...interface{})
 }
 
 /* 获取JSON */
-func (c Controller) GetJSON(w http.ResponseWriter, r *http.Request, data map[string]interface{}) {
+func (c *Controller) GetJSON(w http.ResponseWriter, r *http.Request, data map[string]interface{}) {
 	// Json类型
 	w.Header().Set("Content-type", "application/json; charset=utf-8")
 	w.WriteHeader(http.StatusOK)
 	// 语言
 	if data["code"] != nil && data["msg"] == nil {
-		data["msg"] = c.GetLang(r, "code_"+(&util.Type{}).Strval(data["code"]))
+		data["msg"] = c.GetLang("code_" + util.Strval(data["code"]))
 	}
 	// 输出
 	_ = json.NewEncoder(w).Encode(data)
 }
 
 /* Get参数 */
-func (Controller) Get(r *http.Request, key string) string {
+func (*Controller) Get(r *http.Request, key string) string {
 	return r.URL.Query().Get(key)
 }
 
 /* Post参数 */
-func (Controller) Post(r *http.Request, key string) string {
+func (*Controller) Post(r *http.Request, key string) string {
 	return r.FormValue(key)
 }
 
 /* JSON参数 */
-func (Controller) Json(r *http.Request) map[string]interface{} {
+func (*Controller) Json(r *http.Request) map[string]interface{} {
 	if r.Method != http.MethodPost {
 		return nil
 	}
@@ -84,7 +83,7 @@ func (Controller) Json(r *http.Request) map[string]interface{} {
 	}
 	return param
 }
-func (Controller) JsonName(param map[string]interface{}, key string) interface{} {
+func (*Controller) JsonName(param map[string]interface{}, key string) interface{} {
 	value, ok := param[key]
 	if !ok {
 		return nil

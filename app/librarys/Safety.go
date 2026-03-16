@@ -14,7 +14,7 @@ type Safety struct {
 }
 
 /* 正则-公共 */
-func (s *Safety) Config(name string, value string) bool {
+func (s *Safety) IsRight(name string, value string) bool {
 	switch name {
 	case "uname":
 		return s.Test("^[a-zA-Z][a-zA-Z0-9\\_\\@\\-\\*\\&]{3,15}$", value)

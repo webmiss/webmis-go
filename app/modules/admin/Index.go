@@ -2,7 +2,7 @@ package admin
 
 import (
 	"net/http"
-	"strings"
+	"webmis/app/util"
 	"webmis/core"
 )
 
@@ -19,6 +19,7 @@ func (c *Index) Index(w http.ResponseWriter, r *http.Request) {
 
 /* 软件升级 */
 func (c *Index) Version(w http.ResponseWriter, r *http.Request) {
+	c.Controller.Lang = r.URL.Query().Get("lang")
 	// 参数
 	json := c.Json(r)
 	if json == nil {
@@ -28,7 +29,7 @@ func (c *Index) Version(w http.ResponseWriter, r *http.Request) {
 	os := c.JsonName(json, "os").(string)
 	local := c.JsonName(json, "version").(string)
 	// 验证
-	os = strings.ToLower(os)
+	os = util.Lower(os)
 	if os != "web" {
 		c.GetJSON(w, r, map[string]interface{}{"code": 4000, "msg": "[" + os + "]该操作系统不支持更新!"})
 		return
@@ -54,6 +55,7 @@ func (c *Index) Version(w http.ResponseWriter, r *http.Request) {
 
 /* 法定假期 */
 func (c *Index) Holiday(w http.ResponseWriter, r *http.Request) {
+	c.Controller.Lang = r.URL.Query().Get("lang")
 	// 参数
 	json := c.Json(r)
 	if json == nil {

@@ -9,8 +9,8 @@ import (
 type Type struct{}
 
 /* Bool */
-func (t Type) Bool(val interface{}) bool {
-	str := t.Strval(val)
+func Bool(val interface{}) bool {
+	str := Strval(val)
 	res, err := strconv.ParseBool(str)
 	if err != nil {
 		return false
@@ -19,8 +19,8 @@ func (t Type) Bool(val interface{}) bool {
 }
 
 /* Int */
-func (t Type) Int(val interface{}) int {
-	str := t.Strval(val)
+func Int(val interface{}) int {
+	str := Strval(val)
 	res, err := strconv.Atoi(str)
 	if err != nil {
 		return 0
@@ -29,8 +29,8 @@ func (t Type) Int(val interface{}) int {
 }
 
 /* Int64 */
-func (t Type) Int64(val interface{}) int64 {
-	str := t.Strval(val)
+func Int64(val interface{}) int64 {
+	str := Strval(val)
 	res, err := strconv.ParseInt(str, 10, 64)
 	if err != nil {
 		return 0
@@ -39,8 +39,8 @@ func (t Type) Int64(val interface{}) int64 {
 }
 
 /* Float */
-func (t Type) Float(val interface{}) float32 {
-	str := t.Strval(val)
+func Float(val interface{}) float32 {
+	str := Strval(val)
 	res, err := strconv.ParseFloat(str, 32)
 	if err != nil {
 		return 0
@@ -49,8 +49,8 @@ func (t Type) Float(val interface{}) float32 {
 }
 
 /* Float64 */
-func (t Type) Float64(val interface{}) float64 {
-	str := t.Strval(val)
+func Float64(val interface{}) float64 {
+	str := Strval(val)
 	res, err := strconv.ParseFloat(str, 64)
 	if err != nil {
 		return 0
@@ -59,8 +59,8 @@ func (t Type) Float64(val interface{}) float64 {
 }
 
 /* Uint64 */
-func (t Type) Uint64(val interface{}) uint64 {
-	str := t.Strval(val)
+func Uint64(val interface{}) uint64 {
+	str := Strval(val)
 	res, err := strconv.ParseUint(str, 10, 64)
 	if err != nil {
 		return 0
@@ -69,72 +69,72 @@ func (t Type) Uint64(val interface{}) uint64 {
 }
 
 /* 转换: string、int、int64、float、float64、uint64 */
-func (t Type) ToType(tp string, val interface{}) interface{} {
+func ToType(tp string, val interface{}) interface{} {
 	switch tp {
 	case "string":
-		return t.Strval(val)
+		return Strval(val)
 	case "int":
-		return t.Int(val)
+		return Int(val)
 	case "int64":
-		return t.Int64(val)
+		return Int64(val)
 	case "float":
-		return t.Float(val)
+		return Float(val)
 	case "float64":
-		return t.Float64(val)
+		return Float64(val)
 	case "uint64":
-		return t.Uint64(val)
+		return Uint64(val)
 	default:
 		return val
 	}
 }
 
 /* Interface 转 String */
-func (Type) Strval(val interface{}) string {
+func Strval(val interface{}) string {
 	var res string
 	if val == nil {
 		return res
 	}
-	switch val.(type) {
+	switch val := val.(type) {
 	case string:
-		res = val.(string)
+		res = val
 	case int:
-		it := val.(int)
+		it := val
 		res = strconv.Itoa(it)
 	case int8:
-		it := val.(int8)
+		it := val
 		res = strconv.Itoa(int(it))
 	case int16:
-		it := val.(int16)
+		it := val
 		res = strconv.Itoa(int(it))
 	case int32:
-		it := val.(int32)
+		it := val
 		res = strconv.Itoa(int(it))
 	case int64:
-		it := val.(int64)
+		it := val
 		res = strconv.FormatInt(it, 10)
 	case float64:
-		ft := val.(float64)
+		ft := val
 		res = strconv.FormatFloat(ft, 'f', -1, 64)
 	case float32:
-		ft := val.(float32)
+		ft := val
 		res = strconv.FormatFloat(float64(ft), 'f', -1, 64)
 	case uint:
-		it := val.(uint)
+		it := val
 		res = strconv.Itoa(int(it))
 	case uint8:
-		it := val.(uint8)
+		it := val
 		res = strconv.Itoa(int(it))
 	case uint16:
-		it := val.(uint16)
+		it := val
 		res = strconv.Itoa(int(it))
 	case uint32:
-		it := val.(uint32)
+		it := val
 		res = strconv.Itoa(int(it))
 	case uint64:
-		it := val.(uint64)
+		it := val
 		res = strconv.FormatUint(it, 10)
 	case []byte:
-		res = string(val.([]byte))
+		res = string(val)
 	default:
 		data, _ := json.Marshal(val)
 		res = string(data)
@@ -143,7 +143,7 @@ func (Type) Strval(val interface{}) string {
 }
 
 /* 获取类型 */
-func (Type) GetType(val interface{}) string {
+func GetType(val interface{}) string {
 	var res string
 	if val == nil {
 		return "nil"
