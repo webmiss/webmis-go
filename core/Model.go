@@ -20,6 +20,7 @@ type Model struct {
 	MySQLConnectionPool
 	Conn    *sql.Conn     // 连接
 	name    string        // 名称
+	db      string        // 数据库
 	table   string        // 数据表
 	columns string        // 字段
 	where   string        // 条件
@@ -40,6 +41,7 @@ type Model struct {
 func (m *Model) DBConn(name string) *sql.Conn {
 	// 默认值
 	m.name = "Model"
+	m.db = name
 	m.columns = "*"
 	// 配置
 	cfg := (&config.Db{}).Config(name)
@@ -236,7 +238,7 @@ func (m *Model) Find(sql string, args ...interface{}) []map[string]interface{} {
 	}
 	// 连接
 	if m.Conn == nil {
-		return nil
+		m.DBConn(m.db)
 	}
 	// 执行
 	rows, err := m.Query(m.Conn, sql, args...)
@@ -259,7 +261,7 @@ func (m *Model) FindFirst(sql string, args ...interface{}) map[string]interface{
 	}
 	// 连接
 	if m.Conn == nil {
-		return nil
+		m.DBConn(m.db)
 	}
 	// 执行
 	rows, err := m.Conn.QueryContext(context.Background(), sql, args...)
@@ -359,6 +361,11 @@ func (m *Model) Insert(sql string, args ...interface{}) int {
 			return -1
 		}
 	}
+	// 连接
+	if m.Conn == nil {
+		m.DBConn(m.db)
+	}
+	// 执行
 	rs := m.Exec(m.Conn, sql, args...)
 	if rs == nil {
 		return -1
@@ -416,6 +423,11 @@ func (m *Model) Update(sql string, args ...interface{}) bool {
 			return false
 		}
 	}
+	// 连接
+	if m.Conn == nil {
+		m.DBConn(m.db)
+	}
+	// 执行
 	rs := m.Exec(m.Conn, sql, args...)
 	if rs == nil {
 		return false
@@ -455,6 +467,11 @@ func (m *Model) Delete(sql string, args ...interface{}) bool {
 			return false
 		}
 	}
+	// 连接
+	if m.Conn == nil {
+		m.DBConn(m.db)
+	}
+	// 执行
 	rs := m.Exec(m.Conn, sql, args...)
 	if rs == nil {
 		return false

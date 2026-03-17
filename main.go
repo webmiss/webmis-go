@@ -1,6 +1,7 @@
 package main
 
 import (
+	"log"
 	"net/http"
 	"webmis/app/config"
 	"webmis/app/modules/admin"
@@ -47,8 +48,9 @@ func main() {
 	if cfg.Mode == "dev" {
 		(&core.Base{}).Print("[ Server ]", "http://"+cfg.ServerHost+":"+cfg.ServerPort)
 	}
-	err := http.ListenAndServe(cfg.ServerHost+":"+cfg.ServerPort, corsMiddleware(mux))
-	if err != nil {
-		(&core.Base{}).Print("[ Server ]", err.Error())
-	}
+	log.Fatal(http.ListenAndServe(cfg.ServerHost+":"+cfg.ServerPort, corsMiddleware(mux)))
+	// err := http.ListenAndServe(cfg.ServerHost+":"+cfg.ServerPort, corsMiddleware(mux))
+	// if err != nil {
+	// 	(&core.Base{}).Print("[ Server ]", err.Error())
+	// }
 }
