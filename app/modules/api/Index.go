@@ -18,7 +18,7 @@ func (c *Index) Index(w http.ResponseWriter, r *http.Request) {
 	m.Columns("id", "uname")
 	data := m.Find("")
 	// Redis
-	rd := (&core.Redis{}).New("default")
+	rd := (&core.Redis{}).New("")
 	rd.Set("test", "Go Redis")
 	c.Print("Data:", data, rd.Get("test"))
 	// 返回

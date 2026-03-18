@@ -41,3 +41,13 @@ func Lower(val string) string {
 func Upper(val string) string {
 	return strings.ToUpper(val)
 }
+
+/* Explode */
+func Explode(val string, sep string) []string {
+	return strings.Split(val, sep)
+}
+
+/* Implode */
+func Implode(val []string, sep string) string {
+	return strings.Join(val, sep)
+}

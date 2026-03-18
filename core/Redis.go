@@ -22,6 +22,9 @@ type Redis struct {
 func (r *Redis) New(name string) *Redis {
 	// 默认值
 	r.name = "Pool"
+	if name == "" {
+		name = "default"
+	}
 	// 连接池
 	if RedisPool == nil {
 		// 配置
@@ -113,7 +116,7 @@ func (r *Redis) Expire(key string, expire int64) bool {
 }
 
 /* 获取过期时间(秒) */
-func (r *Redis) TTL(key string) int64 {
+func (r *Redis) Ttl(key string) int64 {
 	if r.Conn == nil {
 		return 0
 	}

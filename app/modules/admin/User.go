@@ -5,6 +5,7 @@ import (
 	"webmis/app/config"
 	"webmis/app/librarys"
 	"webmis/app/models"
+	"webmis/app/service"
 	"webmis/app/util"
 	"webmis/core"
 )
@@ -42,7 +43,7 @@ func (c *User) Login(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		// 验证码
-		redis := (&core.Redis{}).New("default")
+		redis := (&core.Redis{}).New("")
 		code := redis.Get(config.Env().Admin_token_prefix + "_vcode_" + uname)
 		if code != "" {
 			if len(code) != 4 {
@@ -56,7 +57,7 @@ func (c *User) Login(w http.ResponseWriter, r *http.Request) {
 		where = "(a.uname='" + uname + "' OR a.tel='" + uname + "' OR a.email='" + uname + "') AND a.password='" + util.Md5(passwd) + "'"
 	} else {
 		// 验证码
-		redis := (&core.Redis{}).New("default")
+		redis := (&core.Redis{}).New("")
 		code := redis.Get(config.Env().Admin_token_prefix + "_vcode_" + uname)
 		if code != "" || code != vcode {
 			c.GetJSON(w, r, map[string]interface{}{"code": 4000, "msg": c.GetLang("login_verify_vcode")})
@@ -81,7 +82,7 @@ func (c *User) Login(w http.ResponseWriter, r *http.Request) {
 	// 是否存在
 	if len(data) == 0 {
 		// 强制验证码(24小时)
-		redis := (&core.Redis{}).New("default")
+		redis := (&core.Redis{}).New("")
 		redis.Set(config.Env().Admin_token_prefix+"_vcode_"+uname, util.Strval(util.Time()))
 		redis.Expire(config.Env().Admin_token_prefix+"_vcode_"+uname, 24*3600)
 		// 返回
@@ -89,7 +90,7 @@ func (c *User) Login(w http.ResponseWriter, r *http.Request) {
 		return
 	} else {
 		// 清除验证码
-		redis := (&core.Redis{}).New("default")
+		redis := (&core.Redis{}).New("")
 		redis.Del(config.Env().Admin_token_prefix + "_vcode_" + uname)
 	}
 	// 是否禁用
@@ -108,6 +109,7 @@ func (c *User) Login(w http.ResponseWriter, r *http.Request) {
 		c.GetJSON(w, r, map[string]interface{}{"code": 4000, "msg": c.GetLang("login_verify_perm")})
 		return
 	}
+	(&service.TokenAdmin{}).SavePerm(util.Strval(data["id"]), util.Strval(perm))
 	c.Print("perm", data, perm, isPasswd)
 	// 返回
 	c.GetJSON(w, r, map[string]interface{}{"code": 0, "data": "Login"})

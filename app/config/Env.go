@@ -8,15 +8,15 @@ type EnvType struct {
 	Password              string
 	Img_url               string
 	Admin_token_prefix    string
-	Admin_token_time      int
+	Admin_token_time      int64
 	Admin_token_auto      bool
 	Admin_token_sso       bool
 	Api_token_prefix      string
-	Api_token_time        int
+	Api_token_time        int64
 	Api_token_auto        bool
 	Api_token_sso         bool
 	Supplier_token_prefix string
-	Supplier_token_time   int
+	Supplier_token_time   int64
 	Supplier_token_auto   bool
 	Supplier_token_sso    bool
 }
