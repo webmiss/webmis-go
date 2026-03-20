@@ -19,7 +19,7 @@ func (c *Index) Index(w http.ResponseWriter, r *http.Request) {
 
 /* 软件升级 */
 func (c *Index) Version(w http.ResponseWriter, r *http.Request) {
-	c.Controller.Lang = r.URL.Query().Get("lang")
+	c.Controller.Lang = c.Get(r, "lang")
 	// 参数
 	json := c.Json(r)
 	if json == nil {
@@ -55,7 +55,7 @@ func (c *Index) Version(w http.ResponseWriter, r *http.Request) {
 
 /* 法定假期 */
 func (c *Index) Holiday(w http.ResponseWriter, r *http.Request) {
-	c.Controller.Lang = r.URL.Query().Get("lang")
+	c.Controller.Lang = c.Get(r, "lang")
 	// 参数
 	json := c.Json(r)
 	if json == nil {

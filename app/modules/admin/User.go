@@ -17,17 +17,17 @@ type User struct {
 
 /* 登录 */
 func (c *User) Login(w http.ResponseWriter, r *http.Request) {
-	c.Controller.Lang = r.URL.Query().Get("lang")
+	c.Controller.Lang = c.Get(r, "lang")
 	// 参数
 	json := c.Json(r)
 	if json == nil {
-		c.GetJSON(w, r, map[string]interface{}{"code": 4000, "msg": "参数错误!"})
+		c.GetJSON(w, r, map[string]interface{}{"code": 4000})
 		return
 	}
-	uname := c.JsonName(json, "uname").(string)
-	passwd := c.JsonName(json, "passwd").(string)
-	vcode := c.JsonName(json, "vcode").(string)
-	vcode_url := c.BaseUrl(r, "admin/user/vcode") + "/" + uname + "?" + util.Strval(util.Time())
+	uname := util.Str(c.JsonName(json, "uname"))
+	passwd := util.Str(c.JsonName(json, "passwd"))
+	vcode := util.Str(c.JsonName(json, "vcode"))
+	vcode_url := c.BaseUrl(r, "admin/user/vcode") + "/" + uname + "?" + util.Str(util.Time())
 	// 验证用户名
 	if !(&librarys.Safety{}).IsRight("uname", uname) && !(&librarys.Safety{}).IsRight("tel", uname) && !(&librarys.Safety{}).IsRight("email", uname) {
 		c.GetJSON(w, r, map[string]interface{}{"code": 4001, "msg": c.GetLang("login_uname")})
@@ -83,7 +83,7 @@ func (c *User) Login(w http.ResponseWriter, r *http.Request) {
 	if len(data) == 0 {
 		// 强制验证码(24小时)
 		redis := (&core.Redis{}).New("")
-		redis.Set(config.Env().Admin_token_prefix+"_vcode_"+uname, util.Strval(util.Time()))
+		redis.Set(config.Env().Admin_token_prefix+"_vcode_"+uname, util.Str(util.Time()))
 		redis.Expire(config.Env().Admin_token_prefix+"_vcode_"+uname, 24*3600)
 		// 返回
 		c.GetJSON(w, r, map[string]interface{}{"code": 4000, "msg": c.GetLang("login_verify"), "vcode_url": vcode_url})
@@ -109,8 +109,80 @@ func (c *User) Login(w http.ResponseWriter, r *http.Request) {
 		c.GetJSON(w, r, map[string]interface{}{"code": 4000, "msg": c.GetLang("login_verify_perm")})
 		return
 	}
-	(&service.TokenAdmin{}).SavePerm(util.Strval(data["id"]), util.Strval(perm))
-	c.Print("perm", data, perm, isPasswd)
+	(&service.TokenAdmin{}).SavePerm(util.Str(data["id"]), util.Str(perm))
+	// 登录时间
+	ltime := util.Time()
+	m = (&models.User{}).New()
+	m.Set(map[string]interface{}{"ltime": ltime})
+	m.Where("id=?", data["id"])
+	m.Update("")
+	// Token
+	token := (&service.TokenAdmin{}).Create(map[string]interface{}{
+		"uid":        data["id"],
+		"uname":      uname,
+		"name":       data["name"],
+		"type":       data["type"],
+		"isPasswd":   isPasswd,
+		"brand":      data["brand"],
+		"shop":       data["shop"],
+		"partner":    data["partner"],
+		"partner_in": data["partner_in"],
+	})
+	// 用户信息
+	uinfo := map[string]interface{}{
+		"uid":        data["id"],
+		"uname":      uname,
+		"tel":        data["tel"],
+		"email":      data["email"],
+		"ltime":      util.Date("2006-01-02 15:04:05", ltime),
+		"type":       data["type"],
+		"nickname":   data["nickname"],
+		"department": data["department"],
+		"position":   data["position"],
+		"name":       data["name"],
+		"gender":     data["gender"],
+		"birthday":   data["birthday"],
+		"img":        (&service.Data{}).Img(util.Str(data["img"]), true),
+		"signature":  data["signature"],
+	}
 	// 返回
-	c.GetJSON(w, r, map[string]interface{}{"code": 0, "data": "Login"})
+	c.GetJSON(w, r, map[string]interface{}{"code": 0, "data": map[string]interface{}{"token": token, "uinfo": uinfo, "isPasswd": isPasswd}})
+}
+
+/* Token验证 */
+func (c *User) Token(w http.ResponseWriter, r *http.Request) {
+	c.Controller.Lang = c.Get(r, "lang")
+	// 参数
+	json := c.Json(r)
+	if json == nil {
+		c.GetJSON(w, r, map[string]interface{}{"code": 4000})
+		return
+	}
+	token := util.Str(c.JsonName(json, "token"))
+	is_uinfo := util.Bool(c.JsonName(json, "uinfo"))
+	// 验证
+	msg := (&service.TokenAdmin{}).Verify(token, "")
+	if msg != "" {
+		c.GetJSON(w, r, map[string]interface{}{"code": 4001})
+		return
+	}
+	tData := (&service.TokenAdmin{}).Token(token)
+	// 用户信息
+	uinfo := map[string]interface{}{}
+	if is_uinfo {
+		m := (&models.User{}).New()
+		m.Table("user a")
+		m.LeftJoin("user_info AS b", "a.id=b.uid")
+		m.Columns(
+			"FROM_UNIXTIME(a.ltime) as ltime", "a.tel", "a.email",
+			"b.type", "b.nickname", "b.department", "b.position", "b.name", "b.gender", "b.img", "b.signature", "FROM_UNIXTIME(b.birthday, '%Y-%m-%d') as birthday",
+		)
+		m.Where("a.id=?", tData["uid"])
+		uinfo = m.FindFirst("")
+		uinfo["uid"] = util.Str(tData["uid"])
+		uinfo["uname"] = tData["uname"]
+		uinfo["img"] = (&service.Data{}).Img(util.Str(uinfo["img"]), true)
+	}
+	// 返回
+	c.GetJSON(w, r, map[string]interface{}{"code": 0, "data": map[string]interface{}{"token_time": tData["time"], "uinfo": uinfo, "isPasswd": tData["isPasswd"]}})
 }

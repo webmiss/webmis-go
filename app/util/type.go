@@ -10,7 +10,7 @@ type Type struct{}
 
 /* Bool */
 func Bool(val interface{}) bool {
-	str := Strval(val)
+	str := Str(val)
 	res, err := strconv.ParseBool(str)
 	if err != nil {
 		return false
@@ -20,7 +20,7 @@ func Bool(val interface{}) bool {
 
 /* Int */
 func Int(val interface{}) int {
-	str := Strval(val)
+	str := Str(val)
 	res, err := strconv.Atoi(str)
 	if err != nil {
 		return 0
@@ -30,7 +30,7 @@ func Int(val interface{}) int {
 
 /* Int64 */
 func Int64(val interface{}) int64 {
-	str := Strval(val)
+	str := Str(val)
 	res, err := strconv.ParseInt(str, 10, 64)
 	if err != nil {
 		return 0
@@ -40,7 +40,7 @@ func Int64(val interface{}) int64 {
 
 /* Float */
 func Float(val interface{}) float32 {
-	str := Strval(val)
+	str := Str(val)
 	res, err := strconv.ParseFloat(str, 32)
 	if err != nil {
 		return 0
@@ -50,7 +50,7 @@ func Float(val interface{}) float32 {
 
 /* Float64 */
 func Float64(val interface{}) float64 {
-	str := Strval(val)
+	str := Str(val)
 	res, err := strconv.ParseFloat(str, 64)
 	if err != nil {
 		return 0
@@ -60,7 +60,7 @@ func Float64(val interface{}) float64 {
 
 /* Uint64 */
 func Uint64(val interface{}) uint64 {
-	str := Strval(val)
+	str := Str(val)
 	res, err := strconv.ParseUint(str, 10, 64)
 	if err != nil {
 		return 0
@@ -72,7 +72,7 @@ func Uint64(val interface{}) uint64 {
 func ToType(tp string, val interface{}) interface{} {
 	switch tp {
 	case "string":
-		return Strval(val)
+		return Str(val)
 	case "int":
 		return Int(val)
 	case "int64":
@@ -89,7 +89,7 @@ func ToType(tp string, val interface{}) interface{} {
 }
 
 /* Interface 转 String */
-func Strval(val interface{}) string {
+func Str(val interface{}) string {
 	var res string
 	if val == nil {
 		return res

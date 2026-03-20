@@ -54,7 +54,7 @@ func (c *Controller) GetJSON(w http.ResponseWriter, r *http.Request, data map[st
 	w.WriteHeader(http.StatusOK)
 	// 语言
 	if data["code"] != nil && data["msg"] == nil {
-		data["msg"] = c.GetLang("code_" + util.Strval(data["code"]))
+		data["msg"] = c.GetLang("code_" + util.Str(data["code"]))
 	}
 	// 输出
 	_ = json.NewEncoder(w).Encode(data)

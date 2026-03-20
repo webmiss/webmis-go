@@ -10,6 +10,7 @@ import (
 
 /* Token Admin */
 type TokenAdmin struct {
+	core.Base
 }
 
 /* 验证 */
@@ -23,7 +24,7 @@ func (t *TokenAdmin) Verify(token string, urlPerm string) string {
 		return "Token验证失败!"
 	}
 	// 是否过期
-	uid := tData["uid"].(string)
+	uid := util.Str(tData["uid"])
 	key := config.Env().Admin_token_prefix + "_token_" + uid
 	redis := (&core.Redis{}).New("")
 	time := redis.Ttl(key)
@@ -57,15 +58,24 @@ func (t *TokenAdmin) Verify(token string, urlPerm string) string {
 		return "菜单验证无效!"
 	}
 	// 验证菜单
-	id := util.Strval(data["id"])
+	id := util.Str(data["id"])
 	perm := t.GetPerm(token)
 	if _, ok := perm[id]; !ok {
 		return "无权访问菜单!"
 	}
 	// 验证动作
 	permVal := 0
-	actionVal := perm[id].(int)
-
+	actionVal := util.Int(perm[id])
+	permArr := util.JsonDecodeArr(util.Str(data["action"]))
+	for _, v := range permArr {
+		if action == v["action"].(string) {
+			permVal = v["perm"].(int)
+			break
+		}
+	}
+	if (actionVal & permVal) == 0 {
+		return "无权访问动作!"
+	}
 	return ""
 }
 
@@ -89,7 +99,7 @@ func (t *TokenAdmin) GetPerm(token string) map[string]interface{} {
 		return arr
 	}
 	// 权限
-	uid := util.Strval(tData["uid"])
+	uid := util.Str(tData["uid"])
 	redis := (&core.Redis{}).New("")
 	permStr := redis.Get(config.Env().Admin_token_prefix + "_perm_" + uid)
 	if permStr == "" {
@@ -110,7 +120,7 @@ func (t *TokenAdmin) Create(data map[string]interface{}) string {
 	data["l_time"] = util.Date("2006-01-02 15:04:05", 0)
 	token := (&librarys.Safety{}).Encode(data)
 	// 缓存Token
-	key := config.Env().Admin_token_prefix + "_token_" + util.Strval(data["id"])
+	key := config.Env().Admin_token_prefix + "_token_" + util.Str(data["uid"])
 	redis := (&core.Redis{}).New("")
 	redis.Set(key, util.Md5(token))
 	redis.Expire(key, config.Env().Admin_token_time)
@@ -118,13 +128,13 @@ func (t *TokenAdmin) Create(data map[string]interface{}) string {
 }
 
 /* 解析 */
-func (t *TokenAdmin) Decode(token string) map[string]interface{} {
-	tData := (&librarys.Safety{}).Decode(token)
-	if tData == nil {
+func (t *TokenAdmin) Token(token string) map[string]interface{} {
+	data := (&librarys.Safety{}).Decode(token)
+	if data == nil {
 		return nil
 	}
 	// 过期时间
 	redis := (&core.Redis{}).New("")
-	tData["time"] = redis.Ttl(config.Env().Admin_token_prefix + "_token_" + util.Strval(tData["id"]))
-	return tData
+	data["time"] = redis.Ttl(config.Env().Admin_token_prefix + "_token_" + util.Str(data["id"]))
+	return data
 }

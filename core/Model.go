@@ -291,7 +291,7 @@ func (m *Model) FindDataAll(rs *sql.Rows) []map[string]interface{} {
 		rs.Scan(key...)
 		item := map[string]interface{}{}
 		for i, v := range val {
-			item[columns[i]] = util.Strval(v)
+			item[columns[i]] = util.Str(v)
 		}
 		res = append(res, item)
 	}

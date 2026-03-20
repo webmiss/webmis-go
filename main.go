@@ -1,7 +1,6 @@
 package main
 
 import (
-	"log"
 	"net/http"
 	"webmis/app/config"
 	"webmis/app/modules/admin"
@@ -43,14 +42,14 @@ func main() {
 	mux.HandleFunc("/admin/index/version", (&admin.Index{}).Version)
 	mux.HandleFunc("/admin/index/holiday", (&admin.Index{}).Holiday)
 	mux.HandleFunc("/admin/user/login", (&admin.User{}).Login)
+	mux.HandleFunc("/admin/user/token", (&admin.User{}).Token)
 	// 启动
 	cfg := config.Env()
 	if cfg.Mode == "dev" {
 		(&core.Base{}).Print("[ Server ]", "http://"+cfg.ServerHost+":"+cfg.ServerPort)
 	}
-	log.Fatal(http.ListenAndServe(cfg.ServerHost+":"+cfg.ServerPort, corsMiddleware(mux)))
-	// err := http.ListenAndServe(cfg.ServerHost+":"+cfg.ServerPort, corsMiddleware(mux))
-	// if err != nil {
-	// 	(&core.Base{}).Print("[ Server ]", err.Error())
-	// }
+	err := http.ListenAndServe(cfg.ServerHost+":"+cfg.ServerPort, corsMiddleware(mux))
+	if err != nil {
+		(&core.Base{}).Print("[ Server ]", err.Error())
+	}
 }

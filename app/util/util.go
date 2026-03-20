@@ -1,6 +1,9 @@
 package util
 
-import "strings"
+import (
+	"encoding/json"
+	"strings"
+)
 
 /* 常用工具 */
 type Util struct{}
@@ -50,4 +53,33 @@ func Explode(val string, sep string) []string {
 /* Implode */
 func Implode(val []string, sep string) string {
 	return strings.Join(val, sep)
+}
+
+/* JsonEncode */
+func JsonEncode(data map[string]interface{}) string {
+	bytes, err := json.Marshal(data)
+	if err != nil {
+		return ""
+	}
+	return string(bytes)
+}
+
+/* JsonDecode */
+func JsonDecode(jsonStr string) map[string]interface{} {
+	var data map[string]interface{}
+	err := json.Unmarshal([]byte(jsonStr), &data)
+	if err != nil {
+		return data
+	}
+	return data
+}
+
+/* JsonDecodeArr */
+func JsonDecodeArr(jsonStr string) []map[string]interface{} {
+	var data []map[string]interface{}
+	err := json.Unmarshal([]byte(jsonStr), &data)
+	if err != nil {
+		return data
+	}
+	return data
 }
