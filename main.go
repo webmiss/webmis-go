@@ -43,6 +43,7 @@ func main() {
 	mux.HandleFunc("/admin/index/holiday", (&admin.Index{}).Holiday)
 	mux.HandleFunc("/admin/user/login", (&admin.User{}).Login)
 	mux.HandleFunc("/admin/user/token", (&admin.User{}).Token)
+	mux.HandleFunc("/admin/sys_menus/get_menus_perm", (&admin.SysMenus{}).GetMenusPerm)
 	// 启动
 	cfg := config.Env()
 	if cfg.Mode == "dev" {

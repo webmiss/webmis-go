@@ -64,6 +64,15 @@ func JsonEncode(data map[string]interface{}) string {
 	return string(bytes)
 }
 
+/* JsonEncodeArr */
+func JsonEncodeArr(data []map[string]interface{}) string {
+	bytes, err := json.Marshal(data)
+	if err != nil {
+		return ""
+	}
+	return string(bytes)
+}
+
 /* JsonDecode */
 func JsonDecode(jsonStr string) map[string]interface{} {
 	var data map[string]interface{}

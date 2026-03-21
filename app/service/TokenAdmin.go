@@ -135,6 +135,6 @@ func (t *TokenAdmin) Token(token string) map[string]interface{} {
 	}
 	// 过期时间
 	redis := (&core.Redis{}).New("")
-	data["time"] = redis.Ttl(config.Env().Admin_token_prefix + "_token_" + util.Str(data["id"]))
+	data["time"] = redis.Ttl(config.Env().Admin_token_prefix + "_token_" + util.Str(data["uid"]))
 	return data
 }
