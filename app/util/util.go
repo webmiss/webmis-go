@@ -46,12 +46,12 @@ func Upper(val string) string {
 }
 
 /* Explode */
-func Explode(val string, sep string) []string {
+func Explode(sep string, val string) []string {
 	return strings.Split(val, sep)
 }
 
 /* Implode */
-func Implode(val []string, sep string) string {
+func Implode(sep string, val []string) string {
 	return strings.Join(val, sep)
 }
 

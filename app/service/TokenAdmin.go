@@ -45,10 +45,10 @@ func (t *TokenAdmin) Verify(token string, urlPerm string) string {
 	if urlPerm == "" {
 		return ""
 	}
-	arr := util.Explode(urlPerm, "/")
-	action := util.Explode(arr[len(arr)-1], "?")[0]
+	arr := util.Explode("/", urlPerm)
+	action := util.Explode("?", arr[len(arr)-1])[0]
 	arr = arr[:len(arr)-1]
-	controller := util.Implode(arr, "/")
+	controller := util.Implode("/", arr)
 	// 查询菜单
 	m := (&models.SysMenu{}).New()
 	m.Columns("id", "action")
@@ -106,9 +106,9 @@ func (t *TokenAdmin) GetPerm(token string) map[string]interface{} {
 		return arr
 	}
 	// 拆分
-	perm := util.Explode(permStr, " ")
+	perm := util.Explode(" ", permStr)
 	for _, v := range perm {
-		tmp := util.Explode(v, ":")
+		tmp := util.Explode(":", v)
 		arr[tmp[0]] = tmp[1]
 	}
 	return arr
