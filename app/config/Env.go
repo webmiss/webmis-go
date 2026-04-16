@@ -1,24 +1,20 @@
 package config
 
 type EnvType struct {
-	Mode                  string
-	ServerHost            string
-	ServerPort            string
-	Key                   string
-	Password              string
-	Img_url               string
-	Admin_token_prefix    string
-	Admin_token_time      int64
-	Admin_token_auto      bool
-	Admin_token_sso       bool
-	Api_token_prefix      string
-	Api_token_time        int64
-	Api_token_auto        bool
-	Api_token_sso         bool
-	Supplier_token_prefix string
-	Supplier_token_time   int64
-	Supplier_token_auto   bool
-	Supplier_token_sso    bool
+	Mode               string
+	ServerHost         string
+	ServerPort         string
+	Key                string
+	Password           string
+	Img_url            string
+	Admin_token_prefix string
+	Admin_token_time   int64
+	Admin_token_auto   bool
+	Admin_token_sso    bool
+	Api_token_prefix   string
+	Api_token_time     int64
+	Api_token_auto     bool
+	Api_token_sso      bool
 }
 
 /* 公共配置 */
@@ -32,17 +28,13 @@ func Env() *EnvType {
 	// 资源
 	c.Img_url = "https://go.webmis.vip/"
 	// Token
-	c.Admin_token_prefix = "webmisAdmin"       // 前缀-Admin
-	c.Admin_token_time = 2 * 3600              // 有效时长(2小时)
-	c.Admin_token_auto = true                  // 自动续期
-	c.Admin_token_sso = false                  // 单点登录
-	c.Api_token_prefix = "webmisApi"           // 前缀-Api
-	c.Api_token_time = 7 * 24 * 3600           // 有效时长(7天)
-	c.Api_token_auto = true                    // 自动续期
-	c.Api_token_sso = true                     // 单点登录
-	c.Supplier_token_prefix = "webmisSupplier" // 前缀-Supplier
-	c.Supplier_token_time = 7 * 24 * 3600      // 有效时长(7天)
-	c.Supplier_token_auto = true               // 自动续期
-	c.Supplier_token_sso = true                // 单点登录
+	c.Admin_token_prefix = "webmisAdmin" // 前缀-Admin
+	c.Admin_token_time = 2 * 3600        // 有效时长(2小时)
+	c.Admin_token_auto = true            // 自动续期
+	c.Admin_token_sso = false            // 单点登录
+	c.Api_token_prefix = "webmisApi"     // 前缀-Api
+	c.Api_token_time = 7 * 24 * 3600     // 有效时长(7天)
+	c.Api_token_auto = true              // 自动续期
+	c.Api_token_sso = true               // 单点登录
 	return c
 }

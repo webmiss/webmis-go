@@ -55,7 +55,10 @@ func (s *Safety) Decode(token string) map[string]interface{} {
 		return []byte(config.Env().Key), nil
 	})
 	if claims, ok := str.Claims.(jwt.MapClaims); ok && str.Valid {
-		return claims["param"].(map[string]interface{})
+		data, ok := claims["param"].(map[string]interface{})
+		if ok {
+			return data
+		}
 	} else if err != nil {
 		return nil
 	}

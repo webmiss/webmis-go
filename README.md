@@ -16,7 +16,7 @@ $ cd webmis-go
 # Linux、MacOS
 ./bash install
 
-# Windows 11
+# Windows 11 (自动环境安装和配置)
 .\cmd install
 ```
 
@@ -33,6 +33,17 @@ $ cd webmis-go
 - 浏览器访问 http://127.0.0.1:9030/
 
 ## 生产环境
+
+### Ubuntu
+```bash
+# 安装 Golang
+apt install golang-go -y
+# 打包
+./bash build
+# 运行
+./bash start
+```
+
 ### 交换分区( 编译时内存不足 )
 ```bash
 # 创建文件
@@ -107,7 +118,7 @@ webmis-go/
 │    ├── upload                   // 上传目录
 │    └── favicon.png              // 图标
 ├── tmp                            // 热加载缓存( go install github.com/air-verse/air@latest )
-├── bash                           // Linux/MacOS 启动脚本
-├── cmd.bat                        // Windows 启动脚本
+├── bash                           // Linux/MacOS 脚本
+├── cmd.bat                        // Windows 脚本
 └── main.go                        // 入口文件: 路由配置
 ```

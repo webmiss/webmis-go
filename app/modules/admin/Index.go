@@ -2,8 +2,6 @@ package admin
 
 import (
 	"net/http"
-	"webmis/app/models"
-	"webmis/app/service"
 	"webmis/app/util"
 	"webmis/core"
 )
@@ -105,32 +103,4 @@ func (c *Index) Holiday(w http.ResponseWriter, r *http.Request) {
 	} else {
 		c.GetJSON(w, r, map[string]interface{}{"code": 0, "data": ""})
 	}
-}
-
-/* 选项 */
-func (c *Index) GetSelect(w http.ResponseWriter, r *http.Request) {
-	c.Controller.Lang = c.Get(r, "lang")
-	// 参数
-	json := c.Json(r)
-	if json == nil {
-		c.GetJSON(w, r, map[string]interface{}{"code": 4000})
-		return
-	}
-	token := util.Str(c.JsonName(json, "token"))
-	// 验证
-	msg := (&service.TokenAdmin{}).Verify(token, "")
-	if msg != "" {
-		c.GetJSON(w, r, map[string]interface{}{"code": 4001})
-		return
-	}
-	// 仓库
-	c.partner = (&models.ErpBasePartner{}).GetList([]string{"type=0", "status=1"}, nil, "")
-	partner_name := make([]map[string]interface{}, 0)
-	for k, v := range c.partner {
-		partner_name = append(partner_name, map[string]interface{}{"label": v["name"], "value": k})
-	}
-	// 返回
-	c.GetJSON(w, r, map[string]interface{}{"code": 0, "data": map[string]interface{}{
-		"partner_name": partner_name,
-	}})
 }
