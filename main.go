@@ -41,7 +41,7 @@ func main() {
 	mux.HandleFunc("/admin/index/index", (&admin.Index{}).Index)
 	mux.HandleFunc("/admin/index/version", (&admin.Index{}).Version)
 	mux.HandleFunc("/admin/index/holiday", (&admin.Index{}).Holiday)
-	mux.HandleFunc("/admin/index/get_select", (&admin.Index{}).GetSelect)
+	mux.HandleFunc("/admin/msg/list", (&admin.Msg{}).List)
 	mux.HandleFunc("/admin/user/login", (&admin.User{}).Login)
 	mux.HandleFunc("/admin/user/token", (&admin.User{}).Token)
 	mux.HandleFunc("/admin/sys_menus/get_menus_perm", (&admin.SysMenus{}).GetMenusPerm)
