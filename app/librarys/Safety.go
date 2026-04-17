@@ -39,9 +39,11 @@ func (s *Safety) Test(reg string, value string) bool {
 
 /* Base64-加密 */
 func (s *Safety) Encode(param map[string]interface{}) string {
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
-		"param": param,
-	})
+	claims := make(jwt.MapClaims)
+	for index, val := range param {
+		claims[index] = val
+	}
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 	str, err := token.SignedString([]byte(config.Env().Key))
 	if err != nil {
 		return ""
@@ -51,16 +53,19 @@ func (s *Safety) Encode(param map[string]interface{}) string {
 
 /* Base64-解密 */
 func (s *Safety) Decode(token string) map[string]interface{} {
-	str, err := jwt.Parse(token, func(t *jwt.Token) (interface{}, error) {
+	// 解析
+	res, err := jwt.Parse(token, func(t *jwt.Token) (interface{}, error) {
+		if _, ok := t.Method.(*jwt.SigningMethodHMAC); !ok {
+			return nil, nil
+		}
 		return []byte(config.Env().Key), nil
 	})
-	if claims, ok := str.Claims.(jwt.MapClaims); ok && str.Valid {
-		data, ok := claims["param"].(map[string]interface{})
-		if ok {
-			return data
-		}
-	} else if err != nil {
+	if err != nil {
 		return nil
+	}
+	// 数据
+	if claims, ok := res.Claims.(jwt.MapClaims); ok && res.Valid {
+		return claims
 	}
 	return nil
 }

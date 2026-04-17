@@ -69,7 +69,7 @@ func (t *TokenAdmin) Verify(token string, urlPerm string) string {
 	permArr := util.JsonDecodeArr(util.Str(data["action"]))
 	for _, v := range permArr {
 		if action == v["action"].(string) {
-			permVal = v["perm"].(int)
+			permVal = util.Int(v["perm"])
 			break
 		}
 	}

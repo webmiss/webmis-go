@@ -44,6 +44,10 @@ func main() {
 	mux.HandleFunc("/admin/msg/list", (&admin.Msg{}).List)
 	mux.HandleFunc("/admin/user/login", (&admin.User{}).Login)
 	mux.HandleFunc("/admin/user/token", (&admin.User{}).Token)
+	mux.HandleFunc("/admin/sys_file/list", (&admin.SysFile{}).List)
+	mux.HandleFunc("/admin/sys_file/mkdir", (&admin.SysFile{}).Mkdir)
+	mux.HandleFunc("/admin/sys_file/rename", (&admin.SysFile{}).Rename)
+	mux.HandleFunc("/admin/sys_file/remove", (&admin.SysFile{}).Remove)
 	mux.HandleFunc("/admin/sys_menus/get_menus_perm", (&admin.SysMenus{}).GetMenusPerm)
 	// 启动
 	cfg := config.Env()

@@ -7,6 +7,7 @@ type EnvType struct {
 	Key                string
 	Password           string
 	Img_url            string
+	RootDir            string
 	Admin_token_prefix string
 	Admin_token_time   int64
 	Admin_token_auto   bool
@@ -26,6 +27,7 @@ func Env() *EnvType {
 	c.Key = "e4b99adec618e653400966be536c45f8" // 加密密钥
 	c.Password = "123456"                      // 123456
 	// 资源
+	c.RootDir = "public/" // 根目录
 	c.Img_url = "https://go.webmis.vip/"
 	// Token
 	c.Admin_token_prefix = "webmisAdmin" // 前缀-Admin
