@@ -53,3 +53,9 @@ func Date(format string, timestamp int) string {
 	// t, _ := time.ParseInLocation(format, str, time.Local)
 	// return t.Format(format)
 }
+
+/* StrToTime */
+func StrToTime(str string) int {
+	t, _ := time.ParseInLocation("2006-01-02 15:04:05", str, time.Local)
+	return int(t.Unix())
+}
