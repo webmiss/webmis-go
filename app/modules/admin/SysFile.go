@@ -14,7 +14,6 @@ var dirRoot = "upload/"
 /* 文件管理 */
 type SysFile struct {
 	core.Controller
-	partner map[string]map[string]interface{}
 }
 
 /* 列表 */
