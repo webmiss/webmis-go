@@ -2,8 +2,7 @@ package librarys
 
 import (
 	"fmt"
-	// "io/ioutil"
-
+	"io"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -223,13 +222,16 @@ func (fe FileEo) Rename(rename string, name string) bool {
 }
 
 /* 上传 */
-// func (fe FileEo) Upload(c *gin.Context, file *multipart.FileHeader, filename string) bool {
-// 	dst := dirRoot + filename
-// 	if err := c.SaveUploadedFile(file, dst); err != nil {
-// 		return false
-// 	}
-// 	return true
-// }
+func (fe FileEo) Upload(file io.Reader, filename string) bool {
+	to := dirRoot + filename
+	dst, err := os.Create(to)
+	if err != nil {
+		return false
+	}
+	defer dst.Close()
+	io.Copy(dst, file)
+	return true
+}
 
 /* 写入 */
 func (fe FileEo) Writer(file string, content string) error {

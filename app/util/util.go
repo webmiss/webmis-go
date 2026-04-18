@@ -92,3 +92,24 @@ func JsonDecodeArr(jsonStr string) []map[string]interface{} {
 	}
 	return data
 }
+
+/* ArrayMerge */
+func ArrayMerge(arrays ...map[string]interface{}) map[string]interface{} {
+	res := map[string]interface{}{}
+	for _, arr := range arrays {
+		for k, v := range arr {
+			res[k] = v
+		}
+	}
+	return res
+}
+
+/* 是否存在于数组 */
+func InArray(needle string, haystack []string) bool {
+	for _, val := range haystack {
+		if val == needle {
+			return true
+		}
+	}
+	return false
+}

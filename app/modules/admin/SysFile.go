@@ -146,3 +146,65 @@ func (c *SysFile) Remove(w http.ResponseWriter, r *http.Request) {
 	// 返回
 	c.GetJSON(w, r, map[string]interface{}{"code": 0})
 }
+
+/* 上传 */
+func (c *SysFile) Upload(w http.ResponseWriter, r *http.Request) {
+	c.Controller.Lang = c.Get(r, "lang")
+	// 参数
+	json := c.Json(r)
+	if json == nil {
+		c.GetJSON(w, r, map[string]interface{}{"code": 4000})
+		return
+	}
+	token := util.Str(c.JsonName(json, "token"))
+	path := util.Str(c.JsonName(json, "path"))
+	// 验证
+	msg := (&service.TokenAdmin{}).Verify(token, r.RequestURI)
+	if msg != "" {
+		c.GetJSON(w, r, map[string]interface{}{"code": 4001})
+		return
+	}
+	if path == "" {
+		c.GetJSON(w, r, map[string]interface{}{"code": 4000})
+		return
+	}
+	// 数据
+	_, fileHeader, _ := r.FormFile("file")
+	img := (&librarys.Upload{}).File(fileHeader, map[string]interface{}{"path": dirRoot + path, "bind": nil})
+	if img == "" {
+		c.GetJSON(w, r, map[string]interface{}{"code": 5000})
+		return
+	}
+	// 返回
+	c.GetJSON(w, r, map[string]interface{}{"code": 0})
+}
+
+/* 下载 */
+func (c *SysFile) Down(w http.ResponseWriter, r *http.Request) {
+	c.Controller.Lang = c.Get(r, "lang")
+	// 参数
+	json := c.Json(r)
+	if json == nil {
+		c.GetJSON(w, r, map[string]interface{}{"code": 4000})
+		return
+	}
+	token := util.Str(c.JsonName(json, "token"))
+	path := util.Str(c.JsonName(json, "path"))
+	filename := util.Str(c.JsonName(json, "filename"))
+	// 验证
+	msg := (&service.TokenAdmin{}).Verify(token, r.RequestURI)
+	if msg != "" {
+		c.GetJSON(w, r, map[string]interface{}{"code": 4001})
+		return
+	}
+	if path == "" || filename == "" {
+		c.GetJSON(w, r, map[string]interface{}{"code": 4000})
+		return
+	}
+	// 数据
+	(&librarys.FileEo{}).New(config.Env().RootDir + dirRoot)
+	data := (&librarys.FileEo{}).Bytes(path + filename)
+	// 返回
+	w.WriteHeader(http.StatusOK)
+	w.Write(data)
+}

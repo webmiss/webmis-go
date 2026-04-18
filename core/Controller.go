@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"reflect"
+	"strings"
 	"webmis/app/config/langs"
 	"webmis/app/util"
 )
@@ -71,15 +72,33 @@ func (*Controller) Post(r *http.Request, key string) string {
 }
 
 /* JSON参数 */
-func (*Controller) Json(r *http.Request) map[string]interface{} {
+func (c *Controller) Json(r *http.Request) map[string]interface{} {
 	if r.Method != http.MethodPost {
 		return nil
 	}
+	// 类型
 	var param map[string]interface{}
-	err := json.NewDecoder(r.Body).Decode(&param)
-	defer r.Body.Close()
-	if err != nil {
-		return nil
+	contentType := r.Header.Get("Content-Type")
+	if strings.Contains(contentType, "multipart/form-data") {
+		err := r.ParseMultipartForm(10 << 20)
+		if err != nil {
+			return nil
+		}
+		// 转换 url.Values 为 map[string]interface{}
+		param = make(map[string]interface{})
+		for key, values := range r.PostForm {
+			if len(values) == 1 {
+				param[key] = values[0]
+			} else {
+				param[key] = values
+			}
+		}
+	} else {
+		err := json.NewDecoder(r.Body).Decode(&param)
+		defer r.Body.Close()
+		if err != nil {
+			return nil
+		}
 	}
 	return param
 }

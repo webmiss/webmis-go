@@ -48,6 +48,8 @@ func main() {
 	mux.HandleFunc("/admin/sys_file/mkdir", (&admin.SysFile{}).Mkdir)
 	mux.HandleFunc("/admin/sys_file/rename", (&admin.SysFile{}).Rename)
 	mux.HandleFunc("/admin/sys_file/remove", (&admin.SysFile{}).Remove)
+	mux.HandleFunc("/admin/sys_file/upload", (&admin.SysFile{}).Upload)
+	mux.HandleFunc("/admin/sys_file/down", (&admin.SysFile{}).Down)
 	mux.HandleFunc("/admin/sys_menus/get_menus_perm", (&admin.SysMenus{}).GetMenusPerm)
 	// 启动
 	cfg := config.Env()
