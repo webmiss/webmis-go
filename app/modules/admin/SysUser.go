@@ -2,6 +2,7 @@ package admin
 
 import (
 	"net/http"
+	"webmis/app/models"
 	"webmis/app/service"
 	"webmis/app/util"
 	"webmis/core"
@@ -35,11 +36,23 @@ func (c *SysUser) Total(w http.ResponseWriter, r *http.Request) {
 	}
 	// 条件
 	where := c.getWhere(data)
-	c.Print(where)
+	// 统计
+	m := (&models.User{}).New()
+	m.Table("user as a")
+	m.LeftJoin("user_info as b", "a.id=b.uid")
+	m.LeftJoin("sys_perm as c", "a.id=c.uid")
+	m.LeftJoin("sys_role as d", "c.role=d.id")
+	m.Columns("count(*) AS total")
+	m.Where(where)
+	one := m.FindFirst("")
 	// 数据
-	list := map[string]interface{}{}
+	total := make(map[string]interface{})
+	if one != nil {
+		total["total"] = util.Int(one["total"])
+	}
+	c.Print(one)
 	// 返回
-	c.GetJSON(w, r, map[string]interface{}{"code": 0, "time": util.Date("Y/m/d H:i:s", 0), "data": list})
+	c.GetJSON(w, r, map[string]interface{}{"code": 0, "time": util.Date("Y/m/d H:i:s", 0), "data": total})
 }
 
 /* 列表 */
@@ -68,9 +81,27 @@ func (c *SysUser) List(w http.ResponseWriter, r *http.Request) {
 	}
 	// 条件
 	where := c.getWhere(data)
-	c.Print(where, order)
+	// 查询
+	m := (&models.User{}).New()
+	m.Table("user as a")
+	m.LeftJoin("user_info as b", "a.id=b.uid")
+	m.LeftJoin("sys_perm as c", "a.id=c.uid")
+	m.LeftJoin("sys_role as d", "c.role=d.id")
+	m.Columns(
+		"a.id", "a.uname", "a.email", "a.tel", "a.status", "FROM_UNIXTIME(a.rtime, '%Y-%m-%d %H:%i:%s') as rtime", "FROM_UNIXTIME(a.ltime, '%Y-%m-%d %H:%i:%s') as ltime", "FROM_UNIXTIME(a.utime, '%Y-%m-%d %H:%i:%s') as utime",
+		"b.type", "b.nickname", "b.department", "b.position", "b.name", "b.gender", "b.img", "b.remark", "FROM_UNIXTIME(b.birthday, '%Y-%m-%d') as birthday",
+		"c.role", "c.perm",
+		"d.name as role_name",
+	)
+	m.Where(where)
+	m.Order("a.ltime DESC")
+	if order != "" {
+		m.Order(order)
+	}
+	m.Page(page, limit)
+	list := m.Find("")
 	// 数据
-	list := map[string]interface{}{}
+	c.Print(list)
 	// 返回
 	c.GetJSON(w, r, map[string]interface{}{"code": 0, "time": util.Date("Y/m/d H:i:s", 0), "data": list})
 }
@@ -84,7 +115,13 @@ func (c *SysUser) getWhere(d map[string]interface{}) string {
 		stime = util.Date("Y-m-d", 0)
 	}
 	start := util.StrToTime(stime.(string) + " 00:00:00")
-	c.Print(stime.(string) + " 00:00:00")
-	where = append(where, "stime>="+util.Str(start))
+	where = append(where, "a.ltime>="+util.Str(start))
+	etime, ok := d["etime"]
+	if !ok {
+		etime = util.Date("Y-m-d", 0)
+	}
+	end := util.StrToTime(etime.(string) + " 23:59:59")
+	where = append(where, "a.ltime<="+util.Str(end))
+	// 结果
 	return util.Implode(" AND ", where)
 }

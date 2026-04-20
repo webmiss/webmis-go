@@ -46,16 +46,11 @@ func Date(format string, timestamp int) string {
 		res = strings.ReplaceAll(res, k, v)
 	}
 	return res
-	// if timestamp == 0 {
-	// 	timestamp = Time()
-	// }
-	// str := time.UnixMilli(int64(timestamp) * 1000).Format("2006-01-02 15:04:05")
-	// t, _ := time.ParseInLocation(format, str, time.Local)
-	// return t.Format(format)
 }
 
 /* StrToTime */
-func StrToTime(str string) int {
-	t, _ := time.ParseInLocation("2006-01-02 15:04:05", str, time.Local)
+func StrToTime(datetime string) int {
+	datetime = strings.ReplaceAll(datetime, "/", "-")
+	t, _ := time.ParseInLocation("2006-01-02 15:04:05", datetime, time.Local)
 	return int(t.Unix())
 }
