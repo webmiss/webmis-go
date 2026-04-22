@@ -11,6 +11,7 @@ import (
 /* 系统用户 */
 type SysUser struct {
 	core.Controller
+	type_name map[string]interface{}
 }
 
 /* 统计 */
@@ -50,7 +51,6 @@ func (c *SysUser) Total(w http.ResponseWriter, r *http.Request) {
 	if one != nil {
 		total["total"] = util.Int(one["total"])
 	}
-	c.Print(one)
 	// 返回
 	c.GetJSON(w, r, map[string]interface{}{"code": 0, "time": util.Date("Y/m/d H:i:s", 0), "data": total})
 }
@@ -101,7 +101,24 @@ func (c *SysUser) List(w http.ResponseWriter, r *http.Request) {
 	m.Page(page, limit)
 	list := m.Find("")
 	// 数据
-	c.Print(list)
+	c.type_name = (&service.Status{}).Public("role_name")
+	for _, v := range list {
+		if util.Int(v["status"]) == 1 {
+			v["status"] = true
+		} else {
+			v["status"] = false
+		}
+		v["type_name"] = "-"
+		if _, ok := c.type_name[util.Str(v["type"])]; ok {
+			v["type_name"] = util.Str(c.type_name[util.Str(v["type"])])
+		}
+		if v["role_name"] == "" {
+			v["role_name"] = "私有"
+			if v["perm"] == "" {
+				v["role_name"] = "-"
+			}
+		}
+	}
 	// 返回
 	c.GetJSON(w, r, map[string]interface{}{"code": 0, "time": util.Date("Y/m/d H:i:s", 0), "data": list})
 }
@@ -124,4 +141,50 @@ func (c *SysUser) getWhere(d map[string]interface{}) string {
 	where = append(where, "a.ltime<="+util.Str(end))
 	// 结果
 	return util.Implode(" AND ", where)
+}
+
+/* 选项 */
+func (c *SysUser) GetSelect(w http.ResponseWriter, r *http.Request) {
+	c.Controller.Lang = c.Get(r, "lang")
+	// 参数
+	json := c.Json(r)
+	if json == nil {
+		c.GetJSON(w, r, map[string]interface{}{"code": 4000})
+		return
+	}
+	token := util.Str(c.JsonName(json, "token"))
+	// 验证
+	msg := (&service.TokenAdmin{}).Verify(token, "")
+	if msg != "" {
+		c.GetJSON(w, r, map[string]interface{}{"code": 4001})
+		return
+	}
+	// 类型
+	type_name := []map[string]interface{}{}
+	c.type_name = (&service.Status{}).Public("role_name")
+	for k, v := range c.type_name {
+		type_name = append(type_name, map[string]interface{}{"label": v, "value": k})
+	}
+	// 角色
+	m := (&models.SysRole{}).New()
+	m.Columns("id", "name")
+	m.Where("status=1")
+	all := m.Find("")
+	role_name := []map[string]interface{}{}
+	role_name = append(role_name, map[string]interface{}{"label": "无", "value": ""})
+	for _, v := range all {
+		role_name = append(role_name, map[string]interface{}{"label": v["name"], "value": v["id"]})
+	}
+	// 状态
+	status_name := []map[string]interface{}{}
+	c.type_name = (&service.Status{}).Public("status_name")
+	for k, v := range c.type_name {
+		status_name = append(status_name, map[string]interface{}{"label": v, "value": k})
+	}
+	// 返回
+	c.GetJSON(w, r, map[string]interface{}{"code": 0, "data": map[string]interface{}{
+		"type_name":   type_name,
+		"role_name":   role_name,
+		"status_name": status_name,
+	}})
 }

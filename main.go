@@ -52,6 +52,7 @@ func main() {
 	mux.HandleFunc("/admin/sys_file/down", (&admin.SysFile{}).Down)
 	mux.HandleFunc("/admin/sys_user/total", (&admin.SysUser{}).Total)
 	mux.HandleFunc("/admin/sys_user/list", (&admin.SysUser{}).List)
+	mux.HandleFunc("/admin/sys_user/get_select", (&admin.SysUser{}).GetSelect)
 	mux.HandleFunc("/admin/sys_menus/get_menus_perm", (&admin.SysMenus{}).GetMenusPerm)
 	// 启动
 	cfg := config.Env()
