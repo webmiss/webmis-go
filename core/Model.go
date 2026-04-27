@@ -37,9 +37,7 @@ type Model struct {
 func (m *Model) DBConn(name string) *sql.Conn {
 	// 默认值
 	m.name = "Model"
-	if name == "" {
-		m.db = "default"
-	} else {
+	if name != "" {
 		m.db = name
 	}
 	m.columns = "*"
