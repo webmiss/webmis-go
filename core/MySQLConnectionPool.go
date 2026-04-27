@@ -10,174 +10,189 @@ import (
 	_ "github.com/go-sql-driver/mysql"
 )
 
+var pool_default chan *sql.Conn  // 连接池: default
+var pool_other chan *sql.Conn    // 连接池: other
+var pool_name string = "MariaDB" // 名称
+var pool_db string = "default"   // 数据库
+var pool_initSize int            // 初始连接数
+var pool_maxSize int             // 最大连接数
+var pool_maxWait time.Duration   // 超时时间
+var pool_dsn string              // MySQL连接DSN
+
 // MySQL 连接池
 type MySQLConnectionPool struct {
-	name      string         // 名称
-	idleConns chan *sql.Conn // 存储空闲连接的通道（并发安全）
-	maxSize   int            // 连接池最大连接数
-	initSize  int            // 初始连接数
-	dsn       string         // MySQL连接DSN
-	closed    bool           // 连接池是否已关闭
-	connCount int            // 已创建的总连接数（含使用中+空闲）
-	countLock chan struct{}  // 用于保护connCount的锁（基于通道的轻量锁）
+	Base
 }
 
-/* 初始化连接池 */
-func (p *MySQLConnectionPool) Pool(cfg *config.Db) (*MySQLConnectionPool, error) {
+/* 数据源 */
+func (p *MySQLConnectionPool) InitPool(name string) {
 	// 参数
-	p.name = "Pool"
-	p.closed = false
-	p.countLock = make(chan struct{}, 1)
-	p.initSize = cfg.PoolInitSize
-	p.maxSize = cfg.PoolMaxSize
-	if p.initSize > p.maxSize {
-		p.maxSize = p.initSize
-	}
+	pool_db = name
 	// 配置
-	p.idleConns = make(chan *sql.Conn, cfg.PoolMaxSize)
-	p.dsn = cfg.User + ":" + cfg.Password + "@tcp(" + cfg.Host + ":" + cfg.Port + ")/" + cfg.Database + "?charset=" + cfg.Charset + "&parseTime=True&loc=" + cfg.Loc
-	// 创建初始连接
-	for i := 0; i < p.initSize; i++ {
-		conn, err := p.createConn()
-		if err != nil {
-			p.Destroy()
-			return nil, errors.New("[ " + p.name + " ]" + "创建初始连接失败: " + err.Error())
-		}
-		p.idleConns <- conn
-		p.incrConnCount()
+	cfg := (&config.Db{}).Config(name)
+	pool_initSize = cfg.PoolInitSize
+	pool_maxSize = cfg.PoolMaxSize
+	pool_maxWait = time.Duration(cfg.PoolMaxWait) * time.Millisecond
+	pool_dsn = cfg.User + ":" + cfg.Password + "@tcp(" + cfg.Host + ":" + cfg.Port + ")/" + cfg.Database + "?charset=" + cfg.Charset + "&parseTime=True&loc=" + cfg.Loc
+	// 初始化连接池
+	if name == "default" && pool_default != nil {
+		return
 	}
-	return p, nil
+	if name == "other" && pool_other != nil {
+		return
+	}
+	// 创建连接池
+	if name == "default" {
+		pool_default = make(chan *sql.Conn, cfg.PoolMaxSize)
+	} else if name == "other" {
+		pool_other = make(chan *sql.Conn, cfg.PoolMaxSize)
+	}
+	// 初始化连接数
+	for i := 0; i < pool_initSize; i++ {
+		conn, err := p.CreateConnection()
+		if err != nil {
+			p.Print("[ " + pool_name + " ] MariaDB Pool: " + err.Error())
+			return
+		}
+		if name == "default" {
+			pool_default <- conn
+		} else if name == "other" {
+			pool_other <- conn
+		}
+	}
+	p.Print("[ "+pool_name+" ] MariaDB Pool:", pool_db, p.GetIdleCount())
 }
 
 /* 创建连接 */
-func (p *MySQLConnectionPool) createConn() (*sql.Conn, error) {
-	if p.closed {
-		return nil, errors.New("[ " + p.name + " ]" + "连接池已关闭，无法创建新连接")
-	}
-	db, err := sql.Open("mysql", p.dsn)
+func (p *MySQLConnectionPool) CreateConnection() (*sql.Conn, error) {
+	db, err := sql.Open("mysql", pool_dsn)
 	if err != nil {
-		return nil, errors.New("[ " + p.name + " ]" + "创建连接失败: " + err.Error())
+		return nil, err
 	}
 	// 设置属性
-	db.SetMaxIdleConns(p.maxSize)
-	db.SetMaxOpenConns(p.maxSize)
+	db.SetMaxIdleConns(pool_maxSize)
+	db.SetMaxOpenConns(pool_maxSize)
 	db.SetConnMaxLifetime(30 * time.Minute)
 	db.SetConnMaxIdleTime(10 * time.Minute)
 	// 获取连接
 	conn, err := db.Conn(context.Background())
 	if err != nil {
-		db.Close()
-		return nil, errors.New("[ " + p.name + " ]" + "获取连接失败: " + err.Error())
-	}
-	// 是否有效
-	if err := p.validateConn(conn); err != nil {
-		conn.Close()
-		return nil, errors.New("[ " + p.name + " ]" + "连接无效: " + err.Error())
+		_ = db.Close()
+		p.Print("[ " + pool_name + " ] CreateConnection: " + err.Error())
+		return nil, err
 	}
 	return conn, nil
 }
 
+/* 默认连接池 */
+func (p *MySQLConnectionPool) GetIdleConnections() chan *sql.Conn {
+	if pool_db == "default" {
+		return pool_default
+	} else if pool_db == "other" {
+		return pool_other
+	}
+	return nil
+}
+
 /* 获取连接 */
-func (p *MySQLConnectionPool) GetConnection(timeout time.Duration) (*sql.Conn, error) {
-	if p.closed {
-		return nil, errors.New("[ " + p.name + " ]" + "连接池已关闭，无法获取连接")
+func (p *MySQLConnectionPool) GetConnection() (*sql.Conn, error) {
+	idle := p.GetIdleConnections()
+	if idle == nil {
+		return nil, errors.New("[ " + pool_name + " ]" + " 无效连接池: " + pool_db)
 	}
 	// 超时获取连接
-	ctx, cancel := context.WithTimeout(context.Background(), timeout)
+	ctx, cancel := context.WithTimeout(context.Background(), pool_maxWait)
 	defer cancel()
 	select {
-	case <-ctx.Done():
-		// 验证
-		if p.getConnCount() < p.maxSize {
-			conn, err := p.createConn()
-			if err != nil {
-				return nil, errors.New("[ " + p.name + " ]" + "创建连接失败: " + err.Error())
-			}
-			p.incrConnCount()
-			return conn, nil
-		}
-		return nil, errors.New("[ " + p.name + " ]" + "连接池已满，无法获取连接")
-	case conn := <-p.idleConns:
+	case conn := <-idle:
 		// 从空闲通道获取连接
-		if err := p.validateConn(conn); err != nil {
-			conn.Close()
-			p.decrConnCount()
-			return p.createConn()
+		if !p.ValidateConn(conn) {
+			_ = conn.Close()
+			return p.CreateConnection()
 		}
 		return conn, nil
+	case <-ctx.Done():
+		// 验证
+		if p.GetIdleCount() < pool_maxSize {
+			conn, err := p.CreateConnection()
+			if err != nil {
+				return nil, errors.New("[ " + pool_name + " ]" + "GetConnection: " + err.Error())
+			}
+			return conn, nil
+		}
+		return nil, errors.New("[ " + pool_name + " ]" + "Connection pool is full, timeout while acquiring idle connection")
 	}
 }
 
 /* 归还连接 */
-func (p *MySQLConnectionPool) ReleaseConnection(conn *sql.Conn) error {
-	if p.closed || conn == nil {
-		if conn != nil {
-			conn.Close()
-		}
-		return nil
+func (p *MySQLConnectionPool) ReleaseConnection(conn *sql.Conn) bool {
+	if conn == nil {
+		return false
+	}
+	// 连接池
+	idleConnections := p.GetIdleConnections()
+	if idleConnections == nil {
+		return false
 	}
 	// 校验有效性
-	if err := p.validateConn(conn); err != nil {
-		conn.Close()
-		p.decrConnCount()
-		return errors.New("[ " + p.name + " ]" + "连接无效: " + err.Error())
+	if !p.ValidateConn(conn) {
+		_ = conn.Close()
+		return false
 	}
 	// 归还连接
 	select {
-	case p.idleConns <- conn:
-		return nil
+	case idleConnections <- conn:
+		return true
 	default:
-		conn.Close()
-		p.decrConnCount()
-		return errors.New("[ " + p.name + " ]" + "连接池已满，无法归还连接")
+		_ = conn.Close()
+		p.Print("[ " + pool_name + " ] ReleaseConnection: 连接池已满")
+		return false
 	}
 }
 
 /* 验证连接 */
-func (p *MySQLConnectionPool) validateConn(conn *sql.Conn) error {
-	return conn.PingContext(context.Background())
-}
-
-/* 线程安全-增加连接计数 */
-func (p *MySQLConnectionPool) incrConnCount() {
-	p.countLock <- struct{}{}
-	p.connCount++
-	<-p.countLock
-}
-
-/* 线程安全-减少连接计数 */
-func (p *MySQLConnectionPool) decrConnCount() {
-	p.countLock <- struct{}{}
-	p.connCount--
-	<-p.countLock
-}
-
-/* 线程安全-获取空闲连接数 */
-func (p *MySQLConnectionPool) getConnCount() int {
-	p.countLock <- struct{}{}
-	count := p.connCount
-	<-p.countLock
-	return count
+func (p *MySQLConnectionPool) ValidateConn(conn *sql.Conn) bool {
+	if conn == nil {
+		return false
+	}
+	err := conn.PingContext(context.Background())
+	if err != nil {
+		p.Print("[ " + pool_name + " ] ValidateConn: " + err.Error())
+		return false
+	}
+	return true
 }
 
 /* 获取空闲连接数 */
 func (p *MySQLConnectionPool) GetIdleCount() int {
-	return len(p.idleConns)
+	// 连接池
+	idleConnections := p.GetIdleConnections()
+	if idleConnections == nil {
+		return 0
+	}
+	return len(idleConnections)
 }
 
 /* 销毁连接池 */
 func (p *MySQLConnectionPool) Destroy() {
-	if p.closed {
-		return
-	}
-	p.closed = true
-	// 关闭所有空闲连接
-	close(p.idleConns)
-	for conn := range p.idleConns {
-		if conn != nil {
-			conn.Close()
+	// 连接池: default
+	if pool_default != nil {
+		close(pool_default)
+		for conn := range pool_default {
+			if conn != nil {
+				_ = conn.Close()
+			}
 		}
+		pool_default = nil
 	}
-	// 重置计数
-	p.connCount = 0
+	// 连接池: other
+	if pool_other != nil {
+		close(pool_other)
+		for conn := range pool_other {
+			if conn != nil {
+				_ = conn.Close()
+			}
+		}
+		pool_other = nil
+	}
 }

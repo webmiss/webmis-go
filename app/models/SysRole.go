@@ -9,7 +9,7 @@ type SysRole struct {
 
 /* 构造函数 */
 func (m *SysRole) New() *SysRole {
-	m.DBConn("default")
+	m.DBConfig("default")
 	m.Table("sys_role")
 	return m
 }

@@ -3,22 +3,18 @@ package core
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"strconv"
 	"strings"
-	"time"
-	"webmis/app/config"
 	"webmis/app/util"
 
 	_ "github.com/go-sql-driver/mysql"
 )
 
-var Pool *MySQLConnectionPool // 连接池
-
 /* 控制器 */
 type Model struct {
 	Base
 	MySQLConnectionPool
-	Conn    *sql.Conn     // 连接
 	name    string        // 名称
 	db      string        // 数据库
 	table   string        // 数据表
@@ -41,33 +37,30 @@ type Model struct {
 func (m *Model) DBConn(name string) *sql.Conn {
 	// 默认值
 	m.name = "Model"
-	m.db = name
-	m.columns = "*"
-	// 配置
-	cfg := (&config.Db{}).Config(name)
-	// 连接池
-	if Pool == nil {
-		var err error
-		Pool, err = (&MySQLConnectionPool{}).Pool(cfg)
-		if err != nil {
-			m.Print("[ "+m.name+" ] Pool:", err.Error())
-			return nil
-		}
-		return nil
+	if name == "" {
+		m.db = "default"
+	} else {
+		m.db = name
 	}
-	// 连接
-	conn, err := Pool.GetConnection(3 * time.Second)
+	m.columns = "*"
+	// 初始化连接池
+	(&MySQLConnectionPool{}).InitPool(m.db)
+	// 获取连接
+	conn, err := (&MySQLConnectionPool{}).GetConnection()
 	if err != nil {
 		m.Print("[ "+m.name+" ] Conn:", err.Error())
 		return nil
 	}
-	m.Conn = conn
-	return m.Conn
+	// 返回
+	return conn
 }
 
 /* 查询 */
 func (m *Model) Query(conn *sql.Conn, sql string, args ...interface{}) (*sql.Rows, error) {
-	rows, err := m.Conn.QueryContext(context.Background(), sql, args...)
+	if conn == nil {
+		return nil, errors.New("[ " + m.name + " ] Query: " + "connection is empty")
+	}
+	rows, err := conn.QueryContext(context.Background(), sql, args...)
 	if err != nil {
 		m.Print("[ "+m.name+" ] Query:", err.Error())
 		return nil, err
@@ -92,11 +85,11 @@ func (m *Model) Exec(conn *sql.Conn, sql string, args ...interface{}) sql.Result
 }
 
 /* 关闭 */
-func (m *Model) Close() {
-	if Pool != nil && m.Conn != nil {
-		err := Pool.ReleaseConnection(m.Conn)
-		if err != nil {
-			m.Print("[ "+m.name+" ] Close:", err.Error())
+func (m *Model) Close(conn *sql.Conn) {
+	if conn != nil {
+		res := (&MySQLConnectionPool{}).ReleaseConnection(conn)
+		if !res {
+			m.Print("[ "+m.name+" ] Close:", "close failed")
 		}
 	}
 }
@@ -114,6 +107,11 @@ func (m *Model) GetID() int {
 /* 获取-影响行数 */
 func (m *Model) GetNums() int {
 	return m.nums
+}
+
+/* 数据库 */
+func (m *Model) DBConfig(name string) {
+	m.db = name
 }
 
 /* 表名 */
@@ -237,16 +235,19 @@ func (m *Model) Find(sql string, args ...interface{}) []map[string]interface{} {
 		}
 	}
 	// 连接
-	if m.Conn == nil {
-		m.DBConn(m.db)
+	conn := m.DBConn(m.db)
+	if conn == nil {
+		return nil
 	}
 	// 执行
-	rows, err := m.Query(m.Conn, sql, args...)
+	rows, err := m.Query(conn, sql, args...)
+	defer rows.Close()
 	if err != nil {
+		m.Close(conn)
 		m.Print("[ "+m.name+" ] Find:", err.Error())
 		return nil
 	}
-	return m.FindDataAll(rows)
+	return m.FindDataAll(conn, rows)
 }
 
 /* 查询-单条 */
@@ -260,16 +261,18 @@ func (m *Model) FindFirst(sql string, args ...interface{}) map[string]interface{
 		}
 	}
 	// 连接
-	if m.Conn == nil {
-		m.DBConn(m.db)
-	}
-	// 执行
-	rows, err := m.Conn.QueryContext(context.Background(), sql, args...)
-	if err != nil {
-		m.Print("[ "+m.name+" ] Find:", err.Error())
+	conn := m.DBConn(m.db)
+	if conn == nil {
 		return nil
 	}
-	res := m.FindDataAll(rows)
+	// 执行
+	rows, err := m.Query(conn, sql, args...)
+	if err != nil {
+		m.Close(conn)
+		m.Print("[ "+m.name+" ] FindFirst:", err.Error())
+		return nil
+	}
+	res := m.FindDataAll(conn, rows)
 	if len(res) == 0 {
 		return nil
 	}
@@ -277,7 +280,7 @@ func (m *Model) FindFirst(sql string, args ...interface{}) map[string]interface{
 }
 
 /* 查询-结果 */
-func (m *Model) FindDataAll(rs *sql.Rows) []map[string]interface{} {
+func (m *Model) FindDataAll(conn *sql.Conn, rs *sql.Rows) []map[string]interface{} {
 	res := []map[string]interface{}{}
 	// 字段
 	columns, _ := rs.Columns()
@@ -295,8 +298,8 @@ func (m *Model) FindDataAll(rs *sql.Rows) []map[string]interface{} {
 		}
 		res = append(res, item)
 	}
-	rs.Close()
-	m.Close()
+	defer rs.Close()
+	m.Close(conn)
 	return res
 }
 
@@ -363,17 +366,18 @@ func (m *Model) Insert(sql string, args ...interface{}) int {
 		}
 	}
 	// 连接
-	if m.Conn == nil {
-		m.DBConn(m.db)
+	conn := m.DBConn(m.db)
+	if conn == nil {
+		return -1
 	}
 	// 执行
-	rs := m.Exec(m.Conn, sql, args...)
+	rs := m.Exec(conn, sql, args...)
 	if rs == nil {
 		return -1
 	}
 	id, _ := rs.LastInsertId()
 	m.id = int(id)
-	m.Close()
+	m.Close(conn)
 	return m.id
 }
 
@@ -426,15 +430,16 @@ func (m *Model) Update(sql string, args ...interface{}) bool {
 		}
 	}
 	// 连接
-	if m.Conn == nil {
-		m.DBConn(m.db)
+	conn := m.DBConn(m.db)
+	if conn == nil {
+		return false
 	}
 	// 执行
-	rs := m.Exec(m.Conn, sql, args...)
+	rs := m.Exec(conn, sql, args...)
 	if rs == nil {
 		return false
 	}
-	m.Close()
+	m.Close(conn)
 	return true
 }
 
@@ -471,14 +476,16 @@ func (m *Model) Delete(sql string, args ...interface{}) bool {
 		}
 	}
 	// 连接
-	if m.Conn == nil {
-		m.DBConn(m.db)
+	conn := m.DBConn(m.db)
+	if conn == nil {
+		return false
 	}
 	// 执行
-	rs := m.Exec(m.Conn, sql, args...)
+	rs := m.Exec(conn, sql, args...)
 	if rs == nil {
 		return false
 	}
-	m.Close()
+	//
+	m.Close(conn)
 	return true
 }

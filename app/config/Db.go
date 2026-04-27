@@ -27,7 +27,7 @@ func (c *Db) Config(name string) *Db {
 		c.Loc = "Local"                                 // 时区
 		c.PoolInitSize = 10                             // 初始连接数
 		c.PoolMaxSize = 15                              // 最大连接数
-		c.PoolMaxWait = 3                               // 空闲时间
+		c.PoolMaxWait = 3000                            // 空闲时间( 毫秒 )
 	case "other":
 		c.Host = "127.0.0.1"  // 主机
 		c.Port = "3306"       // 端口
@@ -38,7 +38,7 @@ func (c *Db) Config(name string) *Db {
 		c.Loc = "Local"       // 时区
 		c.PoolInitSize = 100  // 初始连接数
 		c.PoolMaxSize = 150   // 最大连接数
-		c.PoolMaxWait = 3     // 空闲时间
+		c.PoolMaxWait = 3000  // 空闲时间( 毫秒 )
 	}
 	return c
 }

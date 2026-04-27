@@ -17,10 +17,11 @@ func (c *Index) Index(w http.ResponseWriter, r *http.Request) {
 	m := (&models.User{}).New()
 	m.Columns("id", "uname")
 	data := m.Find("")
+	c.Print("Model:", data)
 	// Redis
 	rd := (&core.Redis{}).New("")
 	rd.Set("test", "Go Redis")
-	c.Print("Data:", data, rd.Get("test"))
+	c.Print("Redis:", rd.Get("test"))
 	// 返回
 	c.GetJSON(w, r, map[string]interface{}{"code": 0, "msg": "Go Api"})
 }
