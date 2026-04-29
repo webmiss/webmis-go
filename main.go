@@ -44,6 +44,7 @@ func main() {
 	mux.HandleFunc("/admin/msg/list", (&admin.Msg{}).List)
 	mux.HandleFunc("/admin/user/login", (&admin.User{}).Login)
 	mux.HandleFunc("/admin/user/token", (&admin.User{}).Token)
+	mux.HandleFunc("/admin/user/vcode/{uname}", (&admin.User{}).Vcode)
 	mux.HandleFunc("/admin/sys_file/list", (&admin.SysFile{}).List)
 	mux.HandleFunc("/admin/sys_file/mkdir", (&admin.SysFile{}).Mkdir)
 	mux.HandleFunc("/admin/sys_file/rename", (&admin.SysFile{}).Rename)

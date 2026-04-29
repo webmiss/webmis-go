@@ -28,9 +28,13 @@ func (c *User) Login(w http.ResponseWriter, r *http.Request) {
 	passwd := util.Str(c.JsonName(json, "passwd"))
 	vcode := util.Str(c.JsonName(json, "vcode"))
 	vcode_url := c.BaseUrl(r, "admin/user/vcode") + "/" + uname + "?" + util.Str(util.Time())
-	// 验证用户名
+	// 验证
 	if !(&librarys.Safety{}).IsRight("uname", uname) && !(&librarys.Safety{}).IsRight("tel", uname) && !(&librarys.Safety{}).IsRight("email", uname) {
 		c.GetJSON(w, r, map[string]interface{}{"code": 4001, "msg": c.GetLang("login_uname")})
+		return
+	}
+	if passwd == "" && vcode == "" {
+		c.GetJSON(w, r, map[string]interface{}{"code": 4000, "msg": c.GetLang("login_verify")})
 		return
 	}
 	// 登录方式
@@ -46,7 +50,7 @@ func (c *User) Login(w http.ResponseWriter, r *http.Request) {
 		redis := (&core.Redis{}).New("")
 		code := redis.Get(config.Env().Admin_token_prefix + "_vcode_" + uname)
 		if code != "" {
-			if len(code) != 4 {
+			if len(vcode) != 4 {
 				c.GetJSON(w, r, map[string]interface{}{"code": 4001, "msg": c.GetLang("login_vcode"), "vcode_url": vcode_url})
 				return
 			} else if code != vcode {
@@ -181,4 +185,18 @@ func (c *User) Token(w http.ResponseWriter, r *http.Request) {
 	}
 	// 返回
 	c.GetJSON(w, r, map[string]interface{}{"code": 0, "data": map[string]interface{}{"token_time": tData["time"], "uinfo": uinfo, "isPasswd": tData["isPasswd"]}})
+}
+
+/* 验证码-图形 */
+func (c *User) Vcode(w http.ResponseWriter, r *http.Request) {
+	// 参数
+	uname := r.PathValue("uname")
+	// 验证码
+	code, img := (&librarys.Captcha{}).Vcode(4)
+	// 缓存(24小时)
+	redis := (&core.Redis{}).New("")
+	redis.Set(config.Env().Admin_token_prefix+"_vcode_"+uname, util.Lower(code))
+	redis.Expire(config.Env().Admin_token_prefix+"_vcode_"+uname, 24*3600)
+	// 返回
+	c.GetFile(w, img, map[string]string{"Content-Type": "image/png"})
 }
