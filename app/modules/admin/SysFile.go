@@ -204,6 +204,5 @@ func (c *SysFile) Down(w http.ResponseWriter, r *http.Request) {
 	(&librarys.FileEo{}).New(config.Env().RootDir + dirRoot)
 	data := (&librarys.FileEo{}).Bytes(path + filename)
 	// 返回
-	w.WriteHeader(http.StatusOK)
-	w.Write(data)
+	c.GetFile(w, data, map[string]string{"Content-Type": "application/octet-stream"})
 }

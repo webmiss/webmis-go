@@ -61,6 +61,17 @@ func (c *Controller) GetJSON(w http.ResponseWriter, r *http.Request, data map[st
 	_ = json.NewEncoder(w).Encode(data)
 }
 
+/* 获取文件 */
+func (c *Controller) GetFile(w http.ResponseWriter, data []byte, header map[string]string) {
+	// Header
+	for k, v := range header {
+		w.Header().Set(k, v)
+	}
+	// 返回
+	w.WriteHeader(http.StatusOK)
+	w.Write(data)
+}
+
 /* Get参数 */
 func (*Controller) Get(r *http.Request, key string) string {
 	return r.URL.Query().Get(key)
